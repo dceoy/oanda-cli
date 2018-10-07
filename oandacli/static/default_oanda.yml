@@ -1,0 +1,14 @@
+---
+oanda:                    # required
+  access_token: ''        # required
+  account_id: ''          # required
+  environment: live       # required
+redis:
+  host: 127.0.0.1
+  port: 6379
+  db: 0
+instruments:
+  - EUR_USD
+  - USD_JPY
+  - GBP_USD
+  - AUD_USD

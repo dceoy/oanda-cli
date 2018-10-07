@@ -1,0 +1,33 @@
+---
+box:
+  id: dceoy/wercker-base:python
+  entrypoint: /bin/bash -c
+test:
+  steps:
+    - script:
+        name: Install requirements
+        code: |
+          apt-get -y update
+          apt-get -y install redis-server
+    - script:
+        name: Install oanda-cli
+        code: |
+          pip install -U git+https://github.com/oanda/oandapy.git .
+    - script:
+        name: Validate the codes using flake8
+        code: |
+          pip install -U flake8
+          flake8 cli/*.py
+    - script:
+        name: Test base options
+        code: |
+          oanda-cli --version
+          oanda-cli --help
+    - script:
+        name: Test commands
+        code: |
+          oanda-cli init --debug
+  after-steps:
+    - slack-notifier:
+        url: $SLACK_URL
+        channel: $SLACK_CHANNEL

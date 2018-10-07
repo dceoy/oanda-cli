@@ -1,0 +1,17 @@
+---
+version: '3'
+
+services:
+  streamer:
+    container_name: oanda-cli
+    image: dceoy/oanda-cli:dev
+    volumes:
+      - ${PWD}:/wd
+    working_dir: /wd
+    entrypoint:
+      - oanda-cli
+    command:
+      - stream
+      - --file=/wd/oanda.yml
+      - --target=rate
+    restart: always

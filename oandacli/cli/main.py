@@ -1,24 +1,5 @@
-oanda-cli
-=========
-
-Command Line Interface for Oanda API
-
-[![wercker status](https://app.wercker.com/status/f747d0ad7049ed7a12936e7e993ac627/m/master "wercker status")](https://app.wercker.com/project/byKey/f747d0ad7049ed7a12936e7e993ac627)
-
-Installation
-------------
-
-```sh
-$ pip install -U https://github.com/oanda/oandapy/archive/master.tar.gz \
-                 https://github.com/dceoy/oanda-cli/archive/master.tar.gz
-```
-
-Usage
------
-
-```sh
-$ oanda-cli --help
-Command Line Interface for Oanda API
+#!/usr/bin/env python
+"""Command Line Interface for Oanda API
 
 Usage:
     oanda-cli -h|--help
@@ -80,4 +61,49 @@ Arguments:
                           USD_CNH, USD_CZK, USD_DKK, USD_HKD, USD_HUF, USD_INR,
                           USD_JPY, USD_MXN, USD_NOK, USD_PLN, USD_SAR, USD_SEK,
                           USD_SGD, USD_THB, USD_TRY, USD_ZAR, ZAR_JPY }
-```
+"""
+
+import logging
+import os
+from docopt import docopt
+from .. import __version__
+from ..call.candle import track_rate
+from ..call.info import print_info
+from ..call.order import close_positions
+from ..call.streamer import invoke_streamer
+from ..util.config import write_config_yml
+from ..util.logger import set_log_config
+
+
+def main():
+    args = docopt(__doc__, version='oanda-cli {}'.format(__version__))
+    set_log_config(debug=args['--debug'], info=args['--info'])
+    logger = logging.getLogger(__name__)
+    logger.debug('args:{0}{1}'.format(os.linesep, args))
+    if args['init']:
+        write_config_yml(path=args['--file'])
+    elif args['info']:
+        print_info(
+            config_yml=args['--file'], instruments=args['<instrument>'],
+            type=args['<info_target>'], print_json=args['--json']
+        )
+    elif args['track']:
+        track_rate(
+            config_yml=args['--file'], instruments=args['<instrument>'],
+            granularity=args['--granularity'], count=args['--count'],
+            sqlite_path=args['--sqlite'], print_json=args['--json'],
+            quiet=args['--quiet']
+        )
+    elif args['stream']:
+        invoke_streamer(
+            config_yml=args['--file'], target=args['--target'],
+            instruments=args['<instrument>'], print_json=args['--json'],
+            sqlite_path=args['--sqlite'], use_redis=args['--use-redis'],
+            redis_host=args['--redis-host'], redis_port=args['--redis-port'],
+            redis_db=args['--redis-db'],
+            redis_max_llen=args['--redis-max-llen'], quiet=args['--quiet']
+        )
+    elif args['close']:
+        close_positions(
+            config_yml=args['--file'], instruments=args['<instrument>']
+        )
