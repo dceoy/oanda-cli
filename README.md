@@ -30,10 +30,10 @@ Usage:
                     [--granularity=<code>] [--count=<int>] [--json] [--quiet]
                     [<instrument>...]
     oanda-cli stream [--debug|--info] [--file=<yaml>] [--target=<str>]
-                     [--sqlite=<path>] [--use-redis] [--redis-host=<ip>]
-                     [--redis-port=<int>] [--redis-db=<int>]
-                     [--redis-max-llen=<int>] [--json] [--quiet]
-                     [<instrument>...]
+                     [--csv=<path>] [--sqlite=<path>] [--use-redis]
+                     [--redis-host=<ip>] [--redis-port=<int>]
+                     [--redis-db=<int>] [--redis-max-llen=<int>] [--json]
+                     [--quiet] [<instrument>...]
     oanda-cli close [--debug|--info] [--file=<yaml>] [<instrument>...]
 
 Options:
@@ -42,6 +42,7 @@ Options:
     --debug, --info     Execute a command with debug|info messages
     --file=<yaml>       Set a path to a YAML for configurations [$OANDA_YML]
     --quiet             Suppress messages
+    --csv=<path>        Write data in a CSV or TSV file
     --sqlite=<path>     Save data in an SQLite3 database
     --granularity=<code>
                         Set a granularity for rate tracking [default: S5]
