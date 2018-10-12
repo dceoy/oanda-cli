@@ -8,14 +8,14 @@ import time
 import oandapy
 import pandas as pd
 import pandas.io.sql as pdsql
-from ..util.config import read_config_yml
+from ..util.config import read_yml
 
 
 def track_rate(config_yml, instruments, granularity, count, csv_path=None,
                sqlite_path=None, print_json=False, quiet=False):
     logger = logging.getLogger(__name__)
     logger.info('Rate tracking')
-    cf = read_config_yml(path=config_yml)
+    cf = read_yml(path=config_yml)
     oanda = oandapy.API(
         environment=cf['oanda']['environment'],
         access_token=cf['oanda']['access_token']

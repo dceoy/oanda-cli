@@ -72,7 +72,7 @@ from ..call.candle import track_rate
 from ..call.info import print_info
 from ..call.order import close_positions
 from ..call.streamer import invoke_streamer
-from ..util.config import write_config_yml
+from ..util.config import fetch_config_yml_path, write_config_yml
 from ..util.logger import set_log_config
 
 
@@ -81,23 +81,24 @@ def main():
     set_log_config(debug=args['--debug'], info=args['--info'])
     logger = logging.getLogger(__name__)
     logger.debug('args:{0}{1}'.format(os.linesep, args))
+    config_yml_path = fetch_config_yml_path(path=args['--file'])
     if args['init']:
-        write_config_yml(path=args['--file'])
+        write_config_yml(path=config_yml_path)
     elif args['info']:
         print_info(
-            config_yml=args['--file'], instruments=args['<instrument>'],
+            config_yml=config_yml_path, instruments=args['<instrument>'],
             type=args['<info_target>'], print_json=args['--json']
         )
     elif args['track']:
         track_rate(
-            config_yml=args['--file'], instruments=args['<instrument>'],
+            config_yml=config_yml_path, instruments=args['<instrument>'],
             granularity=args['--granularity'], count=args['--count'],
             csv_path=args['--csv'], sqlite_path=args['--sqlite'],
             print_json=args['--json'], quiet=args['--quiet']
         )
     elif args['stream']:
         invoke_streamer(
-            config_yml=args['--file'], target=args['--target'],
+            config_yml=config_yml_path, target=args['--target'],
             instruments=args['<instrument>'], print_json=args['--json'],
             csv_path=args['--csv'], sqlite_path=args['--sqlite'],
             use_redis=args['--use-redis'], redis_host=args['--redis-host'],
@@ -106,5 +107,5 @@ def main():
         )
     elif args['close']:
         close_positions(
-            config_yml=args['--file'], instruments=args['<instrument>']
+            config_yml=config_yml_path, instruments=args['<instrument>']
         )

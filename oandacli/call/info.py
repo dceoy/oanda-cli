@@ -5,7 +5,7 @@ import logging
 import oandapy
 import yaml
 from ..util.error import OandaCliRuntimeError
-from ..util.config import read_config_yml
+from ..util.config import read_yml
 
 
 def print_info(config_yml, instruments=[], type='accounts', print_json=False):
@@ -19,7 +19,7 @@ def print_info(config_yml, instruments=[], type='accounts', print_json=False):
     if type not in available_types:
         raise OandaCliRuntimeError('invalid info type: {}'.format(type))
     logger.info('Information')
-    cf = read_config_yml(path=config_yml)
+    cf = read_yml(path=config_yml)
     oanda = oandapy.API(
         environment=cf['oanda']['environment'],
         access_token=cf['oanda']['access_token']

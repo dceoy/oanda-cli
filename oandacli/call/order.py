@@ -3,13 +3,13 @@
 import logging
 import os
 import oandapy
-from ..util.config import read_config_yml
+from ..util.config import read_yml
 
 
 def close_positions(config_yml, instruments=[]):
     logger = logging.getLogger(__name__)
     logger.info('Position closing')
-    cr = read_config_yml(path=config_yml)['oanda']
+    cr = read_yml(path=config_yml)['oanda']
     oanda = oandapy.API(
         environment=cr['environment'], access_token=cr['access_token']
     )

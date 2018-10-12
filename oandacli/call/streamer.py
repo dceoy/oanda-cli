@@ -9,7 +9,7 @@ import oandapy
 import pandas as pd
 import redis
 import yaml
-from ..util.config import read_config_yml
+from ..util.config import read_yml
 from ..util.error import OandaCliRuntimeError
 
 
@@ -160,7 +160,7 @@ def invoke_streamer(config_yml, target='rate', instruments=None, csv_path=None,
                     print_json=False, quiet=False):
     logger = logging.getLogger(__name__)
     logger.info('Streaming')
-    cf = read_config_yml(path=config_yml)
+    cf = read_yml(path=config_yml)
     rd = cf['redis'] if 'redis' in cf else {}
     streamer = StreamDriver(
         config_dict=cf, target=target, instruments=instruments,
