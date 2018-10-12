@@ -7,9 +7,9 @@ Usage:
     oanda-cli init [--debug|--info] [--file=<yaml>]
     oanda-cli info [--debug|--info] [--file=<yaml>] [--json] <info_target>
                    [<instrument>...]
-    oanda-cli track [--debug|--info] [--file=<yaml>] [--sqlite=<path>]
-                    [--granularity=<code>] [--count=<int>] [--json] [--quiet]
-                    [<instrument>...]
+    oanda-cli track [--debug|--info] [--file=<yaml>] [--csv=<path>]
+                    [--sqlite=<path>] [--granularity=<code>] [--count=<int>]
+                    [--json] [--quiet] [<instrument>...]
     oanda-cli stream [--debug|--info] [--file=<yaml>] [--target=<str>]
                      [--csv=<path>] [--sqlite=<path>] [--use-redis]
                      [--redis-host=<ip>] [--redis-port=<int>]
@@ -23,7 +23,7 @@ Options:
     --debug, --info     Execute a command with debug|info messages
     --file=<yaml>       Set a path to a YAML for configurations [$OANDA_YML]
     --quiet             Suppress messages
-    --csv=<path>        Write data in a CSV or TSV file
+    --csv=<path>        Write data in a CSV or TSV file (with append mode)
     --sqlite=<path>     Save data in an SQLite3 database
     --granularity=<code>
                         Set a granularity for rate tracking [default: S5]
@@ -92,8 +92,8 @@ def main():
         track_rate(
             config_yml=args['--file'], instruments=args['<instrument>'],
             granularity=args['--granularity'], count=args['--count'],
-            sqlite_path=args['--sqlite'], print_json=args['--json'],
-            quiet=args['--quiet']
+            csv_path=args['--csv'], sqlite_path=args['--sqlite'],
+            print_json=args['--json'], quiet=args['--quiet']
         )
     elif args['stream']:
         invoke_streamer(
