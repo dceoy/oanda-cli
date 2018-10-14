@@ -5,11 +5,6 @@ box:
 test:
   steps:
     - script:
-        name: Install requirements
-        code: |
-          apt-get -y update
-          apt-get -y install redis-server
-    - script:
         name: Install oanda-cli
         code: |
           pip install -U git+https://github.com/oanda/oandapy.git .
