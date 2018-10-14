@@ -82,6 +82,10 @@ def main():
     logger = logging.getLogger(__name__)
     logger.debug('args:{0}{1}'.format(os.linesep, args))
     config_yml_path = fetch_config_yml_path(path=args['--file'])
+    execute_command(args=args, config_yml_path=config_yml_path)
+
+
+def execute_command(args, config_yml_path):
     if args['init']:
         write_config_yml(path=config_yml_path)
     elif args['info']:
