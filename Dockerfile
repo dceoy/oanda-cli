@@ -1,4 +1,4 @@
-FROM python:latest
+FROM python:slim
 
 ADD https://github.com/oanda/oandapy/archive/master.tar.gz /tmp/oandapy.tar.gz
 ADD . /tmp/oanda-cli
@@ -14,7 +14,8 @@ RUN set -e \
       && rm -rf /var/lib/apt/lists/*
 
 RUN set -e \
-      && pip install -U --no-cache-dir pip /tmp/oandapy.tar.gz /tmp/oanda-cli \
+      && pip install -U --no-cache-dir \
+        pip /tmp/oandapy.tar.gz /tmp/oanda-cli \
       && rm -rf /tmp/oandapy.tar.gz /tmp/oanda-cli
 
 ENTRYPOINT ["oanda-cli"]

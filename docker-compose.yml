@@ -2,16 +2,14 @@
 version: '3'
 
 services:
-  streamer:
+  oanda-cli:
     container_name: oanda-cli
-    image: dceoy/oanda-cli:dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dceoy/oanda-cli:latest
     volumes:
       - ${PWD}:/wd
     working_dir: /wd
     entrypoint:
       - oanda-cli
-    command:
-      - stream
-      - --file=/wd/oanda.yml
-      - --target=rate
-    restart: always
