@@ -11,8 +11,9 @@ import pandas.io.sql as pdsql
 from ..util.config import read_yml
 
 
-def track_rate(config_yml, instruments, granularity, count, csv_path=None,
-               sqlite_path=None, print_json=False, quiet=False):
+def track_rate(config_yml, instruments, granularity, count,
+               daily_dir_path=None, csv_path=None, sqlite_path=None,
+               print_json=False, quiet=False):
     logger = logging.getLogger(__name__)
     logger.info('Rate tracking')
     cf = read_yml(path=config_yml)
@@ -84,6 +85,40 @@ def track_rate(config_yml, instruments, granularity, count, csv_path=None,
             df_csv_diff.to_csv(csv_abspath, mode='a', header=False, sep=sep)
         else:
             df_all.to_csv(csv_abspath, mode='w', header=True, sep=sep)
+    if daily_dir_path:
+        daily_dir_abspath = os.path.abspath(
+            os.path.expanduser(os.path.expandvars(daily_dir_path))
+        )
+        os.makedirs(daily_dir_abspath, exist_ok=True)
+        df_all_day = df_all.reset_index().assign(
+            datetime=lambda d: pd.to_datetime(d['time'])
+        ).assign(
+            date=lambda d: d['datetime'].dt.date
+        )
+        for t in df_all_day['date'].unique():
+            for i in df_all_day['instrument']:
+                df_csv = df_all_day.pipe(
+                    lambda d: d[(d['date'] == t) & (d['instrument'] == i)]
+                ).drop(columns=['date', 'instrument'])
+                csv_path = os.path.join(
+                    daily_dir_abspath,
+                    'candle.{0}.{1}.{2}.csv'.format(granularity, i, t)
+                )
+                if os.path.isfile(csv_path):
+                    df_csv_new = df_csv.append(
+                        pd.read_csv(csv_path).assign(
+                            datetime=lambda d: pd.to_datetime(d['time'])
+                        )
+                    ).sort_values('datetime').drop(
+                        columns='datetime'
+                    ).drop_duplicates(
+                        subset=['time'], keep='last'
+                    ).set_index('time')
+                else:
+                    df_csv_new = df_csv.sort_values('datetime').drop(
+                        columns='datetime'
+                    ).set_index('time')
+                df_csv_new.to_csv(csv_path, mode='w', header=True, sep=',')
     if not quiet:
         if print_json:
             print(json.dumps(candles, indent=2))
