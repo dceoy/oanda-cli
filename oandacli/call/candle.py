@@ -11,9 +11,8 @@ import pandas.io.sql as pdsql
 from ..util.config import read_yml
 
 
-def track_rate(config_yml, instruments, granularity, count,
-               daily_dir_path=None, csv_path=None, sqlite_path=None,
-               print_json=False, quiet=False):
+def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
+               sqlite_path=None, print_json=False, quiet=False):
     logger = logging.getLogger(__name__)
     logger.info('Rate tracking')
     cf = read_yml(path=config_yml)
@@ -35,6 +34,40 @@ def track_rate(config_yml, instruments, granularity, count,
     df_all = pd.concat([
         pd.DataFrame(c).assign(instrument=i) for i, c in candles.items()
     ]).drop(columns=['complete']).set_index(keys)
+    if csv_dir_path:
+        csv_dir_abspath = os.path.abspath(
+            os.path.expanduser(os.path.expandvars(csv_dir_path))
+        )
+        os.makedirs(csv_dir_abspath, exist_ok=True)
+        df_all_day = df_all.reset_index().assign(
+            datetime=lambda d: pd.to_datetime(d['time'])
+        ).assign(
+            date=lambda d: d['datetime'].dt.date
+        )
+        for t in df_all_day['date'].unique():
+            for i in df_all_day['instrument']:
+                df_csv = df_all_day.pipe(
+                    lambda d: d[(d['date'] == t) & (d['instrument'] == i)]
+                ).drop(columns=['date', 'instrument'])
+                csv_path = os.path.join(
+                    csv_dir_abspath,
+                    'candle.{0}.{1}.{2}.csv'.format(granularity, i, t)
+                )
+                if os.path.isfile(csv_path):
+                    df_csv_new = df_csv.append(
+                        pd.read_csv(csv_path).assign(
+                            datetime=lambda d: pd.to_datetime(d['time'])
+                        )
+                    ).sort_values('datetime').drop(
+                        columns='datetime'
+                    ).drop_duplicates(
+                        subset=['time'], keep='last'
+                    ).set_index('time')
+                else:
+                    df_csv_new = df_csv.sort_values('datetime').drop(
+                        columns='datetime'
+                    ).set_index('time')
+                df_csv_new.to_csv(csv_path, mode='w', header=True, sep=',')
     if sqlite_path:
         logger.debug('df_all.shape: {}'.format(df_all.shape))
         sqlite_abspath = os.path.abspath(
@@ -66,59 +99,6 @@ def track_rate(config_yml, instruments, granularity, count,
                 con.executescript(schema_sql)
                 logger.debug('df_all:{0}{1}'.format(os.linesep, df_all))
                 pdsql.to_sql(df_all, 'candle', con, if_exists='append')
-    if csv_path:
-        csv_abspath = os.path.abspath(
-            os.path.expanduser(os.path.expandvars(csv_path))
-        )
-        sep = (',' if csv_abspath.endswith('.csv') else '\t')
-        if os.path.isfile(csv_abspath):
-            if csv_abspath.endswith('.csv'):
-                df_prev = pd.read_csv(csv_abspath)[keys]
-            else:
-                df_prev = pd.read_table(csv_abspath)[keys]
-            df_csv_diff = df_all.join(
-                df_prev.assign(in_csv=True).set_index(keys),
-                on=keys, how='left'
-            ).pipe(
-                lambda d: d[d['in_csv'].isnull()].drop(columns=['in_csv'])
-            )
-            df_csv_diff.to_csv(csv_abspath, mode='a', header=False, sep=sep)
-        else:
-            df_all.to_csv(csv_abspath, mode='w', header=True, sep=sep)
-    if daily_dir_path:
-        daily_dir_abspath = os.path.abspath(
-            os.path.expanduser(os.path.expandvars(daily_dir_path))
-        )
-        os.makedirs(daily_dir_abspath, exist_ok=True)
-        df_all_day = df_all.reset_index().assign(
-            datetime=lambda d: pd.to_datetime(d['time'])
-        ).assign(
-            date=lambda d: d['datetime'].dt.date
-        )
-        for t in df_all_day['date'].unique():
-            for i in df_all_day['instrument']:
-                df_csv = df_all_day.pipe(
-                    lambda d: d[(d['date'] == t) & (d['instrument'] == i)]
-                ).drop(columns=['date', 'instrument'])
-                csv_path = os.path.join(
-                    daily_dir_abspath,
-                    'candle.{0}.{1}.{2}.csv'.format(granularity, i, t)
-                )
-                if os.path.isfile(csv_path):
-                    df_csv_new = df_csv.append(
-                        pd.read_csv(csv_path).assign(
-                            datetime=lambda d: pd.to_datetime(d['time'])
-                        )
-                    ).sort_values('datetime').drop(
-                        columns='datetime'
-                    ).drop_duplicates(
-                        subset=['time'], keep='last'
-                    ).set_index('time')
-                else:
-                    df_csv_new = df_csv.sort_values('datetime').drop(
-                        columns='datetime'
-                    ).set_index('time')
-                df_csv_new.to_csv(csv_path, mode='w', header=True, sep=',')
     if not quiet:
         if print_json:
             print(json.dumps(candles, indent=2))
