@@ -45,7 +45,7 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
             date=lambda d: d['datetime'].dt.date
         )
         for t in df_all_day['date'].unique():
-            for i in df_all_day['instrument']:
+            for i in df_all_day['instrument'].unique():
                 df_csv = df_all_day.pipe(
                     lambda d: d[(d['date'] == t) & (d['instrument'] == i)]
                 ).drop(columns=['date', 'instrument'])
