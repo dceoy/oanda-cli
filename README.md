@@ -26,9 +26,9 @@ Usage:
     oanda-cli init [--debug|--info] [--file=<yaml>]
     oanda-cli info [--debug|--info] [--file=<yaml>] [--json] <info_target>
                    [<instrument>...]
-    oanda-cli track [--debug|--info] [--file=<yaml>] [--sqlite=<path>]
-                    [--granularity=<code>] [--count=<int>] [--json] [--quiet]
-                    [<instrument>...]
+    oanda-cli track [--debug|--info] [--file=<yaml>] [--csv-dir=<path>]
+                    [--sqlite=<path>] [--granularity=<code>] [--count=<int>]
+                    [--json] [--quiet] [<instrument>...]
     oanda-cli stream [--debug|--info] [--file=<yaml>] [--target=<str>]
                      [--csv=<path>] [--sqlite=<path>] [--use-redis]
                      [--redis-host=<ip>] [--redis-port=<int>]
@@ -42,7 +42,7 @@ Options:
     --debug, --info     Execute a command with debug|info messages
     --file=<yaml>       Set a path to a YAML for configurations [$OANDA_YML]
     --quiet             Suppress messages
-    --csv=<path>        Write data in a CSV or TSV file
+    --csv-dir=<path>    Write data with daily CSV in a directory
     --sqlite=<path>     Save data in an SQLite3 database
     --granularity=<code>
                         Set a granularity for rate tracking [default: S5]
