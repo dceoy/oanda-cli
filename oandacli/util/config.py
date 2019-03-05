@@ -3,6 +3,7 @@
 import logging
 import os
 import shutil
+import v20
 import yaml
 
 
@@ -35,3 +36,13 @@ def fetch_config_yml_path(path=None, env='OANDA_YML', default='oanda.yml'):
     ][0]
     logger.debug('abspath to a config: {}'.format(p))
     return p
+
+
+def create_api(config):
+    return v20.Context(
+        hostname=config['oanda']['hostname'], port=config['oanda']['port'],
+        ssl=config['oanda']['ssl'], application='oandacli',
+        token=config['oanda']['token'], decimal_number_as_float=True,
+        stream_chunk_size=512, stream_timeout=10, datetime_format='RFC3339',
+        poll_timeout=2
+    )

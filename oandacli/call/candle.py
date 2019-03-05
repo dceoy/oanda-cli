@@ -4,11 +4,9 @@ import json
 import os
 import logging
 import sqlite3
-import time
-import oandapy
 import pandas as pd
 import pandas.io.sql as pdsql
-from ..util.config import read_yml
+from ..util.config import create_api, read_yml
 
 
 def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
@@ -16,20 +14,20 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
     logger = logging.getLogger(__name__)
     logger.info('Rate tracking')
     cf = read_yml(path=config_yml)
-    oanda = oandapy.API(
-        environment=cf['oanda']['environment'],
-        access_token=cf['oanda']['access_token']
-    )
+    api = create_api(config=cf)
+    abbr = {'o': 'open', 'h': 'high', 'l': 'low', 'c': 'close'}
     candles = dict()
     for i in (instruments or cf['instruments']):
         candles[i] = [
-            d for d in oanda.get_history(
-                account_id=cf['oanda']['account_id'], instrument=i,
-                candleFormat='bidask', granularity=granularity,
+            {
+                **{abbr[k] + 'Bid': v for k, v in d['bid'].items()},
+                **{abbr[k] + 'Ask': v for k, v in d['ask'].items()},
+                **{k: v for k, v in d.items() if k not in ['bid', 'ask']}
+            } for d in api.instrument.candles(
+                instrument=i, price='BA', granularity=granularity,
                 count=int(count)
             )['candles'] if d['complete']
         ]
-        time.sleep(0.5)
     keys = ['instrument', 'time']
     df_all = pd.concat([
         pd.DataFrame(c).assign(instrument=i) for i, c in candles.items()
