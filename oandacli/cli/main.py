@@ -2,20 +2,20 @@
 """Command Line Interface for Oanda API
 
 Usage:
-    oanda-cli -h|--help
-    oanda-cli -v|--version
-    oanda-cli init [--debug|--info] [--file=<yaml>]
-    oanda-cli info [--debug|--info] [--file=<yaml>] [--json] <info_target>
-                   [<instrument>...]
-    oanda-cli track [--debug|--info] [--file=<yaml>] [--csv-dir=<path>]
-                    [--sqlite=<path>] [--granularity=<code>] [--count=<int>]
-                    [--json] [--quiet] [<instrument>...]
-    oanda-cli stream [--debug|--info] [--file=<yaml>] [--target=<str>]
-                     [--csv=<path>] [--sqlite=<path>] [--use-redis]
-                     [--redis-host=<ip>] [--redis-port=<int>]
-                     [--redis-db=<int>] [--redis-max-llen=<int>] [--json]
-                     [--quiet] [<instrument>...]
-    oanda-cli close [--debug|--info] [--file=<yaml>] [<instrument>...]
+    oandacli -h|--help
+    oandacli -v|--version
+    oandacli init [--debug|--info] [--file=<yaml>]
+    oandacli info [--debug|--info] [--file=<yaml>] [--json] <info_target>
+                  [<instrument>...]
+    oandacli track [--debug|--info] [--file=<yaml>] [--csv-dir=<path>]
+                   [--sqlite=<path>] [--granularity=<code>] [--count=<int>]
+                   [--json] [--quiet] [<instrument>...]
+    oandacli stream [--debug|--info] [--file=<yaml>] [--target=<str>]
+                    [--csv=<path>] [--sqlite=<path>] [--use-redis]
+                    [--redis-host=<ip>] [--redis-port=<int>] [--redis-db=<int>]
+                    [--redis-max-llen=<int>] [--json] [--quiet]
+                    [<instrument>...]
+    oandacli close [--debug|--info] [--file=<yaml>] [<instrument>...]
 
 Options:
     -h, --help          Print help and exit
@@ -77,7 +77,7 @@ from ..util.logger import set_log_config
 
 
 def main():
-    args = docopt(__doc__, version='oanda-cli {}'.format(__version__))
+    args = docopt(__doc__, version='oandacli {}'.format(__version__))
     set_log_config(debug=args['--debug'], info=args['--info'])
     logger = logging.getLogger(__name__)
     logger.debug('args:{0}{1}'.format(os.linesep, args))

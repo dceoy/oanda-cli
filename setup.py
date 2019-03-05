@@ -20,7 +20,7 @@ setup(
         'git+https://github.com/oanda/oandapy.git#egg=oandapy'
     ],
     entry_points={
-        'console_scripts': ['oanda-cli=oandacli.cli.main:main'],
+        'console_scripts': ['oandacli=oandacli.cli.main:main'],
     },
     classifiers=[
         'Programming Language :: Python',

@@ -7,8 +7,7 @@ test:
     - script:
         name: Install oanda-cli
         code: |
-          pip install -U \
-            https://github.com/oanda/oandapy/archive/master.tar.gz .
+          pip install -U .
     - script:
         name: Validate the codes using flake8
         code: |
