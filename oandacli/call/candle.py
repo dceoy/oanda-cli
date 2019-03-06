@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-import json
 import os
 import logging
 import sqlite3
 import pandas as pd
 import pandas.io.sql as pdsql
+import ujson
 from ..util.config import create_api, read_yml
 
 
@@ -18,15 +18,15 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
     abbr = {'o': 'open', 'h': 'high', 'l': 'low', 'c': 'close'}
     candles = dict()
     for i in (instruments or cf['instruments']):
+        res = api.instrument.candles(
+            instrument=i, price='BA', granularity=granularity, count=int(count)
+        )
         candles[i] = [
             {
-                **{abbr[k] + 'Bid': v for k, v in d['bid'].items()},
-                **{abbr[k] + 'Ask': v for k, v in d['ask'].items()},
+                **{abbr[k] + 'Bid': float(v) for k, v in d['bid'].items()},
+                **{abbr[k] + 'Ask': float(v) for k, v in d['ask'].items()},
                 **{k: v for k, v in d.items() if k not in ['bid', 'ask']}
-            } for d in api.instrument.candles(
-                instrument=i, price='BA', granularity=granularity,
-                count=int(count)
-            )['candles'] if d['complete']
+            } for d in ujson.loads(res.raw_body)['candles'] if d['complete']
         ]
     keys = ['instrument', 'time']
     df_all = pd.concat([
@@ -99,7 +99,7 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
                 pdsql.to_sql(df_all, 'candle', con, if_exists='append')
     if not quiet:
         if print_json:
-            print(json.dumps(candles, indent=2))
+            print(ujson.dumps(candles, indent=2))
         else:
             with pd.option_context('display.max_rows', None):
                 print(df_all)

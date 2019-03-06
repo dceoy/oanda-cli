@@ -1,41 +1,81 @@
 #!/usr/bin/env python
 
-import json
+from abc import ABCMeta, abstractmethod
 import logging
 import os
 import signal
 import sqlite3
-import oandapy
 import pandas as pd
 import redis
-import yaml
-from ..util.config import read_yml
+import ujson
+from v20 import V20ConnectionError, V20Timeout
+from ..util.config import create_api, read_yml
 from ..util.error import OandaCliRuntimeError
 
 
-class StreamDriver(oandapy.Streamer):
-    def __init__(self, config_dict, target='rate', instruments=None,
-                 ignore_heartbeat=True, print_json=False, use_redis=False,
+class StreamDriver(object, metaclass=ABCMeta):
+    def __init__(self, api, account_id, target='pricing', instruments=None,
+                 snapshot=True):
+        self.__logger = logging.getLogger(__name__)
+        self.__api = api
+        self.__account_id = account_id
+        if target not in ['pricing', 'transaction']:
+            raise OandaCliRuntimeError('invalid target: {}'.format(target))
+        elif target == 'pricing' and not instruments:
+            raise OandaCliRuntimeError('pricing: instruments required')
+        else:
+            self.__target = target
+            self.__instruments = instruments
+            self.__snapshot = snapshot
+
+    def invoke(self):
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        try:
+            res = self._call_stream_api()
+            for msg_type, msg in res.parts():
+                self.act(msg_type, msg)
+        except (V20ConnectionError, V20Timeout) as e:
+            self.shutdown()
+            raise e
+        else:
+            if res.status == 200:
+                self.__logger.debug(os.linesep + str(res))
+            else:
+                self.__logger.error(os.linesep + str(res))
+
+    def _call_stream_api(self):
+        if self.__target == 'pricing':
+            self.__logger.info('Start to stream market prices')
+            return self.__api.pricing.stream(
+                accountID=self.__account_id, snapshot=self.__snapshot,
+                instruments=','.join(self.__instruments)
+            )
+        elif self.__target == 'transaction':
+            self.__logger.info('Start to stream transactions for the account')
+            return self.__api.transaction.stream(accountID=self.__account_id)
+
+    @abstractmethod
+    def act(self, msg_type, msg):
+        pass
+
+    @abstractmethod
+    def shutdown(self):
+        pass
+
+
+class StreamRecorder(StreamDriver):
+    def __init__(self, api, account_id, target='pricing', instruments=None,
+                 snapshot=True, ignore_heartbeats=True, use_redis=False,
                  redis_host='127.0.0.1', redis_port=6379, redis_db=0,
                  redis_max_llen=None, sqlite_path=None, csv_path=None,
                  quiet=False):
-        self.__logger = logging.getLogger(__name__)
         super().__init__(
-            environment=config_dict['oanda']['environment'],
-            access_token=config_dict['oanda']['access_token']
+            api=api, account_id=account_id, target=target,
+            instruments=instruments, snapshot=snapshot
         )
-        self.__account_id = config_dict['oanda']['account_id'],
-        if target in ['rate', 'event']:
-            self.__data_key = {'rate': 'tick', 'event': 'transaction'}[target]
-        else:
-            raise OandaCliRuntimeError(
-                'invalid stream target: {}'.format(target)
-            )
-        self.__instruments = (
-            instruments if instruments else config_dict['instruments']
-        )
-        self.__ignore_heartbeat = ignore_heartbeat
-        self.__print_json = print_json
+        self.__logger = logging.getLogger(__name__)
+        self.__instruments = instruments
+        self.__ignore_heartbeats = ignore_heartbeats
         self.__quiet = quiet
         if use_redis:
             self.__logger.info('Set a streamer with Redis')
@@ -74,97 +114,67 @@ class StreamDriver(oandapy.Streamer):
         else:
             self.__csv_path = None
 
-    def on_success(self, data):
-        data_json_str = json.dumps(data)
-        if self.__quiet:
-            self.__logger.debug(data)
-        elif self.__print_json:
-            print(data_json_str, flush=True)
+    def act(self, msg_type, msg):
+        if msg_type.endswith('Heartbeat') and self.__ignore_heartbeats:
+            self.__logger.debug(msg)
+        elif (msg_type.startswith('transaction.') or
+              (msg_type.startswith('pricing.') and msg.instrument)):
+            self.__logger.debug(msg)
+            self._print_and_write_msg(msg_type=msg_type, msg=msg)
         else:
-            print(yaml.dump(data).strip(), flush=True)
-        if 'disconnect' in data:
-            self.__logger.warning('Streaming disconnected: {}'.format(data))
-            self.shutdown()
-        elif self.__data_key in data:
-            self.__logger.debug(data)
-            if self.__redis_pool:
-                instrument = data[self.__data_key]['instrument']
-                redis_c = redis.StrictRedis(connection_pool=self.__redis_pool)
-                redis_c.rpush(instrument, data_json_str)
-                if self.__redis_max_llen:
-                    if redis_c.llen(instrument) > self.__redis_max_llen:
-                        redis_c.lpop(instrument)
-            if self.__sqlite:
-                c = self.__sqlite.cursor()
-                if self.__data_key == 'tick':
-                    c.execute(
-                        'INSERT INTO tick VALUES (?,?,?,?)',
-                        [
-                            data['tick']['instrument'], data['tick']['time'],
-                            data['tick']['bid'], data['tick']['ask']
-                        ]
-                    )
-                    self.__sqlite.commit()
-                elif self.__data_key == 'transaction':
-                    c.execute(
-                        'INSERT INTO transaction VALUES (?,?,?)',
-                        [
-                            data['transaction']['instrument'],
-                            data['transaction']['time'],
-                            json.dumps(data['transaction'])
-                        ]
-                    )
-                    self.__sqlite.commit()
-            if self.__csv_path:
-                pd.DataFrame([data[self.__data_key]]).set_index(
-                    'time', drop=True
-                ).to_csv(
-                    self.__csv_path, mode='a',
-                    sep=(',' if self.__csv_path.endswith('.csv') else '\t'),
-                    header=(not os.path.isfile(self.__csv_path))
-                )
-        else:
-            self.__logger.warning('Save skipped: {}'.format(data))
+            self.__logger.warning('Save skipped: {}'.format(msg))
 
-    def on_error(self, data):
-        self.__logger.error(data)
-        self.shutdown()
-
-    def invoke(self):
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
-        if self.__data_key == 'tick':
-            self.__logger.info('Start to stream market prices')
-            self.rates(
-                account_id=self.__account_id,
-                ignore_heartbeat=self.__ignore_heartbeat,
-                instruments=','.join(self.__instruments)
+    def _print_and_write_msg(self, msg_type, msg):
+        msg_json_str = ujson.dumps(msg)
+        if not self.__quiet:
+            print(msg_json_str, flush=True)
+        inst = msg.instrument or ''
+        if self.__redis_pool:
+            data_key = inst or 'transactions'
+            redis_c = redis.StrictRedis(connection_pool=self.__redis_pool)
+            redis_c.rpush(data_key, msg_json_str)
+            if self.__redis_max_llen:
+                if redis_c.llen(data_key) > self.__redis_max_llen:
+                    redis_c.lpop(data_key)
+        if self.__sqlite:
+            c = self.__sqlite.cursor()
+            table_name = msg_type.split('.')[0] + '_stream'
+            c.execute(
+                'INSERT INTO {} VALUES (?,?,?)'.format(table_name),
+                [msg.time, inst, msg_json_str]
             )
-        elif self.__data_key == 'transaction':
-            self.__logger.info('Start to stream events for the account')
-            self.events(
-                account_id=self.__account_id,
-                ignore_heartbeat=self.__ignore_heartbeat
+            self.__sqlite.commit()
+        if self.__csv_path:
+            pd.DataFrame(
+                [{'time': msg.time, 'instrument': inst, 'json': msg_json_str}]
+            ).set_index(
+                ['time', 'instrument']
+            ).to_csv(
+                self.__csv_path, mode='a',
+                sep=(',' if self.__csv_path.endswith('.csv') else '\t'),
+                header=(not os.path.isfile(self.__csv_path))
             )
 
     def shutdown(self):
-        self.disconnect()
         if self.__redis_pool:
             self.__redis_pool.disconnect()
         if self.__sqlite:
             self.__sqlite.close()
 
 
-def invoke_streamer(config_yml, target='rate', instruments=None, csv_path=None,
-                    sqlite_path=None, use_redis=False, redis_host='127.0.0.1',
-                    redis_port=6379, redis_db=0, redis_max_llen=None,
-                    print_json=False, quiet=False):
+def invoke_streamer(config_yml, target='pricing', instruments=None,
+                    csv_path=None, sqlite_path=None, use_redis=False,
+                    redis_host='127.0.0.1', redis_port=6379, redis_db=0,
+                    redis_max_llen=None, ignore_heartbeats=True, quiet=False):
     logger = logging.getLogger(__name__)
     logger.info('Streaming')
     cf = read_yml(path=config_yml)
-    rd = cf['redis'] if 'redis' in cf else {}
-    streamer = StreamDriver(
-        config_dict=cf, target=target, instruments=instruments,
-        print_json=print_json, use_redis=use_redis,
+    rd = cf.get('redis') or dict()
+    streamer = StreamRecorder(
+        api=create_api(config=cf, stream=True),
+        account_id=cf['oanda']['account_id'], target=target,
+        instruments=(instruments or cf['instruments']), snapshot=True,
+        ignore_heartbeats=ignore_heartbeats, use_redis=use_redis,
         redis_host=(redis_host or rd.get('host')),
         redis_port=(redis_port or rd.get('port')),
         redis_db=(redis_db if redis_db is not None else rd.get('db')),

@@ -2,20 +2,20 @@
 """Command Line Interface for Oanda API
 
 Usage:
-    oandacli -h|--help
-    oandacli -v|--version
-    oandacli init [--debug|--info] [--file=<yaml>]
-    oandacli info [--debug|--info] [--file=<yaml>] [--json] <info_target>
-                  [<instrument>...]
-    oandacli track [--debug|--info] [--file=<yaml>] [--csv-dir=<path>]
-                   [--sqlite=<path>] [--granularity=<code>] [--count=<int>]
-                   [--json] [--quiet] [<instrument>...]
-    oandacli stream [--debug|--info] [--file=<yaml>] [--target=<str>]
-                    [--csv=<path>] [--sqlite=<path>] [--use-redis]
-                    [--redis-host=<ip>] [--redis-port=<int>] [--redis-db=<int>]
-                    [--redis-max-llen=<int>] [--json] [--quiet]
-                    [<instrument>...]
-    oandacli close [--debug|--info] [--file=<yaml>] [<instrument>...]
+    oanda-cli -h|--help
+    oanda-cli -v|--version
+    oanda-cli init [--debug|--info] [--file=<yaml>]
+    oanda-cli info [--debug|--info] [--file=<yaml>] [--json] <info_target>
+                   [<instrument>...]
+    oanda-cli track [--debug|--info] [--file=<yaml>] [--csv-dir=<path>]
+                    [--sqlite=<path>] [--granularity=<code>] [--count=<int>]
+                    [--json] [--quiet] [<instrument>...]
+    oanda-cli stream [--debug|--info] [--file=<yaml>] [--target=<str>]
+                     [--csv=<path>] [--sqlite=<path>] [--use-redis]
+                     [--redis-host=<ip>] [--redis-port=<int>]
+                     [--redis-db=<int>] [--redis-max-llen=<int>] [--quiet]
+                     [<instrument>...]
+    oanda-cli close [--debug|--info] [--file=<yaml>] [<instrument>...]
 
 Options:
     -h, --help          Print help and exit
@@ -29,7 +29,8 @@ Options:
                         Set a granularity for rate tracking [default: S5]
     --count=<int>       Set a size for rate tracking (max: 5000) [default: 60]
     --json              Print data with JSON
-    --target=<str>      Set a streaming target { rate, event } [default: rate]
+    --target=<str>      Set a streaming target [default: pricing]
+                        { pricing, transaction }
     --use-redis         Use Redis for data store
     --redis-host=<ip>   Set a Redis server host (override YAML configurations)
     --redis-port=<int>  Set a Redis server port (override YAML configurations)
@@ -38,7 +39,7 @@ Options:
                         Limit Redis list length (override YAML configurations)
 
 Commands:
-    init                Generate a YAML template for configuration
+    init                Create a YAML template for configuration
     info                Print information about <info_target>
     track               Fetch past rates
     stream              Stream market prices or authorized account events
@@ -46,10 +47,8 @@ Commands:
 
 Arguments:
     <info_target>       { instruments, prices, account, accounts, orders,
-                          trades, positions, position, transaction_history,
-                          eco_calendar, historical_position_ratios,
-                          historical_spreads, commitments_of_traders,
-                          orderbook, autochartists }
+                          trades, positions, position, transactions,
+                          order_book, position_book }
     <instrument>        { AUD_CAD, AUD_CHF, AUD_HKD, AUD_JPY, AUD_NZD, AUD_SGD,
                           AUD_USD, CAD_CHF, CAD_HKD, CAD_JPY, CAD_SGD, CHF_HKD,
                           CHF_JPY, CHF_ZAR, EUR_AUD, EUR_CAD, EUR_CHF, EUR_CZK,
@@ -103,10 +102,10 @@ def execute_command(args, config_yml_path):
     elif args['stream']:
         invoke_streamer(
             config_yml=config_yml_path, target=args['--target'],
-            instruments=args['<instrument>'], print_json=args['--json'],
-            csv_path=args['--csv'], sqlite_path=args['--sqlite'],
-            use_redis=args['--use-redis'], redis_host=args['--redis-host'],
-            redis_port=args['--redis-port'], redis_db=args['--redis-db'],
+            instruments=args['<instrument>'], csv_path=args['--csv'],
+            sqlite_path=args['--sqlite'], use_redis=args['--use-redis'],
+            redis_host=args['--redis-host'], redis_port=args['--redis-port'],
+            redis_db=args['--redis-db'],
             redis_max_llen=args['--redis-max-llen'], quiet=args['--quiet']
         )
     elif args['close']:

@@ -1,7 +1,7 @@
 oanda-cli
 =========
 
-Command Line Interface for Oanda API
+Command Line Interface for Oanda V20 REST API
 
 [![wercker status](https://app.wercker.com/status/f747d0ad7049ed7a12936e7e993ac627/m/master "wercker status")](https://app.wercker.com/project/byKey/f747d0ad7049ed7a12936e7e993ac627)
 
@@ -9,8 +9,7 @@ Installation
 ------------
 
 ```sh
-$ pip install -U https://github.com/oanda/oandapy/archive/master.tar.gz \
-                 https://github.com/dceoy/oanda-cli/archive/master.tar.gz
+$ pip install -U https://github.com/dceoy/oanda-cli/archive/master.tar.gz
 ```
 
 Usage
@@ -32,8 +31,8 @@ Usage:
     oanda-cli stream [--debug|--info] [--file=<yaml>] [--target=<str>]
                      [--csv=<path>] [--sqlite=<path>] [--use-redis]
                      [--redis-host=<ip>] [--redis-port=<int>]
-                     [--redis-db=<int>] [--redis-max-llen=<int>] [--json]
-                     [--quiet] [<instrument>...]
+                     [--redis-db=<int>] [--redis-max-llen=<int>] [--quiet]
+                     [<instrument>...]
     oanda-cli close [--debug|--info] [--file=<yaml>] [<instrument>...]
 
 Options:
@@ -48,7 +47,8 @@ Options:
                         Set a granularity for rate tracking [default: S5]
     --count=<int>       Set a size for rate tracking (max: 5000) [default: 60]
     --json              Print data with JSON
-    --target=<str>      Set a streaming target { rate, event } [default: rate]
+    --target=<str>      Set a streaming target [default: pricing]
+                        { pricing, transaction }
     --use-redis         Use Redis for data store
     --redis-host=<ip>   Set a Redis server host (override YAML configurations)
     --redis-port=<int>  Set a Redis server port (override YAML configurations)
@@ -57,7 +57,7 @@ Options:
                         Limit Redis list length (override YAML configurations)
 
 Commands:
-    init                Generate a YAML template for configuration
+    init                Create a YAML template for configuration
     info                Print information about <info_target>
     track               Fetch past rates
     stream              Stream market prices or authorized account events
@@ -65,10 +65,8 @@ Commands:
 
 Arguments:
     <info_target>       { instruments, prices, account, accounts, orders,
-                          trades, positions, position, transaction_history,
-                          eco_calendar, historical_position_ratios,
-                          historical_spreads, commitments_of_traders,
-                          orderbook, autochartists }
+                          trades, positions, position, transactions,
+                          order_book, position_book }
     <instrument>        { AUD_CAD, AUD_CHF, AUD_HKD, AUD_JPY, AUD_NZD, AUD_SGD,
                           AUD_USD, CAD_CHF, CAD_HKD, CAD_JPY, CAD_SGD, CHF_HKD,
                           CHF_JPY, CHF_ZAR, EUR_AUD, EUR_CAD, EUR_CHF, EUR_CZK,

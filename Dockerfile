@@ -1,16 +1,17 @@
-FROM python:slim AS builder
+FROM dceoy/oanda:latest AS builder
 
 ADD . /tmp/oanda-cli
 
 RUN set -e \
       && apt-get -y update \
       && apt-get -y dist-upgrade \
-      && apt-get -y install --no-install-recommends --no-install-suggests gcc
+      && apt-get -y install --no-install-recommends --no-install-suggests \
+        gcc libc-dev
 
 RUN set -e \
       && pip install -U --no-cache-dir pip /tmp/oanda-cli
 
-FROM python:slim
+FROM dceoy/oanda:latest
 
 COPY --from=builder /usr/local /usr/local
 
@@ -26,4 +27,4 @@ RUN set -e \
       && apt-get clean \
       && rm -rf /var/lib/apt/lists/*
 
-ENTRYPOINT ["oandacli"]
+ENTRYPOINT ["oanda-cli"]

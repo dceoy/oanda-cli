@@ -38,11 +38,10 @@ def fetch_config_yml_path(path=None, env='OANDA_YML', default='oanda.yml'):
     return p
 
 
-def create_api(config):
+def create_api(config, stream=False, **kwargs):
     return v20.Context(
-        hostname=config['oanda']['hostname'], port=config['oanda']['port'],
-        ssl=config['oanda']['ssl'], application='oandacli',
-        token=config['oanda']['token'], decimal_number_as_float=True,
-        stream_chunk_size=512, stream_timeout=10, datetime_format='RFC3339',
-        poll_timeout=2
+        hostname='{0}-fx{1}.oanda.com'.format(
+            ('stream' if stream else 'api'), config['oanda']['environment']
+        ),
+        token=config['oanda']['token'], **kwargs
     )

@@ -1,18 +1,26 @@
--- sql for rate tracking
+-- sql for streaming and tracking
 
-CREATE TABLE tick (
-  instrument VARCHAR(7),
+CREATE TABLE pricing_stream (
   time VARCHAR(30),
-  bid DOUBLE PRECISION,
-  ask DOUBLE PRECISION
+  instrument VARCHAR(7),
+  json TEXT
 );
 
-CREATE INDEX ix_tick_inst ON tick (instrument);
-CREATE INDEX ix_tick_time ON tick (time);
+CREATE INDEX ix_pricing_stream_time ON pricing_stream (time);
+CREATE INDEX ix_pricing_stream_inst ON pricing_stream (instrument);
+
+CREATE TABLE transaction_stream (
+  time VARCHAR(30),
+  instrument VARCHAR(7),
+  json TEXT
+);
+
+CREATE INDEX ix_transaction_stream_time ON transaction_stream (time);
+CREATE INDEX ix_transaction_stream_inst ON transaction_stream (instrument);
 
 CREATE TABLE candle (
-  instrument VARCHAR(7),
   time VARCHAR(30),
+  instrument VARCHAR(7),
   openBid DOUBLE PRECISION,
   openAsk DOUBLE PRECISION,
   highBid DOUBLE PRECISION,
@@ -25,14 +33,5 @@ CREATE TABLE candle (
   PRIMARY KEY(instrument, time)
 );
 
-CREATE INDEX ix_candle_inst ON candle (instrument);
 CREATE INDEX ix_candle_time ON candle (time);
-
-CREATE TABLE event (
-  instrument VARCHAR(7),
-  time VARCHAR(30),
-  json TEXT
-);
-
-CREATE INDEX ix_event_inst ON event (instrument);
-CREATE INDEX ix_event_time ON event (time);
+CREATE INDEX ix_candle_inst ON candle (instrument);

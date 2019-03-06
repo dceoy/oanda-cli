@@ -1,15 +1,8 @@
 ---
 oanda:                    # required
-  hostname: api-fxpractice.oanda.com
-  streaming_hostname: stream-fxpractice.oanda.com
-  port: 443
-  ssl: true
-  token: e6ab562b039325f12a026c6fdb7b71bb-b3d8721445817159410f01514acd19hbc
-  username: user
-  accounts:
-    - 101-001-100000-001
-    - 101-001-100000-002
-  active_account: 101-001-100000-001
+  environment: trade      # { trade, practice }
+  token: ''
+  account_id: ''
 redis:
   host: 127.0.0.1
   port: 6379

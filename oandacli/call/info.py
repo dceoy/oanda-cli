@@ -1,78 +1,56 @@
 #!/usr/bin/env python
 
-import json
+import os
 import logging
-import oandapy
+from pprint import pformat
+import ujson
 import yaml
 from ..util.error import OandaCliRuntimeError
-from ..util.config import read_yml
+from ..util.config import create_api, read_yml
 
 
 def print_info(config_yml, instruments=[], type='accounts', print_json=False):
     logger = logging.getLogger(__name__)
     available_types = [
         'instruments', 'account', 'accounts', 'orders', 'trades', 'positions',
-        'transactions', 'prices', 'position', 'eco_calendar',
-        'historical_position_ratios', 'historical_spreads',
-        'commitments_of_traders', 'orderbook', 'autochartist',
+        'transactions', 'prices', 'position', 'order_book', 'position_book'
     ]
     if type not in available_types:
         raise OandaCliRuntimeError('invalid info type: {}'.format(type))
     logger.info('Information')
     cf = read_yml(path=config_yml)
-    oanda = oandapy.API(
-        environment=cf['oanda']['environment'],
-        access_token=cf['oanda']['access_token']
-    )
+    api = create_api(config=cf)
     account_id = cf['oanda']['account_id']
-    insts_str = ','.join(cf.get('instruments') or instruments)
-    period = 604800     # 1 weeik
-    arg_insts = {'instruments': insts_str} if insts_str else {}
+    insts = cf.get('instruments') or instruments
+    arg_insts = {'instruments': ','.join(insts)} if insts else {}
+    logger.debug('information type: {}'.format(type))
     if type == 'instruments':
-        res = oanda.get_instruments(
-            account_id=account_id,
-            fields=','.join([
-                'displayName', 'pip', 'maxTradeUnits', 'precision',
-                'maxTrailingStop', 'minTrailingStop', 'marginRate', 'halted'
-            ]),
-            **arg_insts
-        )
+        res = api.account.instruments(accountID=account_id, **arg_insts)
     elif type == 'account':
-        res = oanda.get_account(account_id=account_id)
+        res = api.account.get(accountID=account_id)
     elif type == 'accounts':
-        res = oanda.get_accounts()
+        res = api.account.list()
     elif type == 'orders':
-        res = oanda.get_orders(account_id=account_id, **arg_insts)
+        res = api.order.list_pending(accountID=account_id)
     elif type == 'trades':
-        res = oanda.get_trades(account_id=account_id, **arg_insts)
+        res = api.trade.list_open(accountID=account_id)
     elif type == 'positions':
-        res = oanda.get_positions(account_id=account_id)
+        res = api.position.list_open(accountID=account_id)
     elif type == 'transactions':
-        res = oanda.get_transaction_history(account_id=account_id, **arg_insts)
-    elif not insts_str:
-        raise OandaCliRuntimeError('{}: instruments required'.format(type))
+        res = api.transaction.list(accountID=account_id)
     elif type == 'prices':
-        res = oanda.get_prices(account_id=account_id, instruments=insts_str)
+        res = api.pricing.get(accountID=account_id, **arg_insts)
+    elif not insts:
+        raise OandaCliRuntimeError('{}: instruments required'.format(type))
     elif type == 'position':
-        res = oanda.get_position(account_id=account_id, instruments=insts_str)
-    elif type == 'eco_calendar':
-        res = oanda.get_eco_calendar(instruments=insts_str, period=period)
-    elif type == 'historical_position_ratios':
-        res = oanda.get_historical_position_ratios(
-            instruments=insts_str, period=period
-        )
-    elif type == 'historical_spreads':
-        res = oanda.get_historical_spreads(
-            instruments=insts_str, period=period
-        )
-    elif type == 'commitments_of_traders':
-        res = oanda.get_commitments_of_traders(instruments=insts_str)
-    elif type == 'orderbook':
-        res = oanda.get_orderbook(instruments=insts_str, period=period)
-    elif type == 'autochartist':
-        res = oanda.get_autochartist(instruments=insts_str, period=period)
-    logger.debug('Print information: {}'.format(type))
+        res = api.position.get(accountID=account_id, instrument=insts[0])
+    elif type == 'order_book':
+        res = api.instrument.order_book(instrument=insts[0])
+    elif type == 'position_book':
+        res = api.instrument.position_book(instrument=insts[0])
+    logger.debug('res:{0}{1}'.format(os.linesep, pformat(vars(res))))
+    data = ujson.loads(res.raw_body)
     print(
-        json.dumps(res, indent=2) if print_json else
-        yaml.dump(res, default_flow_style=False).strip()
+        ujson.dumps(data) if print_json
+        else yaml.dump(data, default_flow_style=False).strip()
     )
