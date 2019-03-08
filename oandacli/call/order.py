@@ -16,14 +16,19 @@ def close_positions(config_yml, instruments=[]):
         api.position.list_open(accountID=account_id).raw_body
     )['positions']
     logger.debug('positions: {}'.format(positions))
-    insts = {
-        p['instrument'] for p in positions
+    pos_dict = {
+        p['instrument']: {
+            '{}Units'.format(k): ('NONE' if int(p[k]['units']) == 0 else 'ALL')
+            for k in ['long', 'short']
+        } for p in positions
         if p['instrument'] in instruments or not instruments
     }
-    if insts:
-        logger.debug('insts: {}'.format(insts))
-        for i in insts:
-            res = api.position.close(accountID=account_id, instrument=i)
+    if pos_dict:
+        logger.debug('pos_dict: {}'.format(pos_dict))
+        for i, a in pos_dict.items():
+            res = api.position.close(
+                accountID=account_id, instrument=i, **a
+            )
             body = ujson.loads(res.raw_body)
             if res.status == 200:
                 logger.debug(body)
