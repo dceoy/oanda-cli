@@ -9,7 +9,7 @@ import pandas as pd
 import redis
 import ujson
 from v20 import V20ConnectionError, V20Timeout
-from ..util.config import create_api, read_yml
+from ..util.config import create_api, log_response, read_yml
 from ..util.error import OandaCliRuntimeError
 
 
@@ -38,10 +38,7 @@ class StreamDriver(object, metaclass=ABCMeta):
             self.shutdown()
             raise e
         else:
-            if res.status == 200:
-                self.__logger.debug(os.linesep + str(res))
-            else:
-                self.__logger.error(os.linesep + str(res))
+            log_response(res, logger=self.__logger)
 
     def _call_stream_api(self):
         if self.__target == 'pricing':

@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
+from itertools import chain
 import os
 import logging
 import sqlite3
 import pandas as pd
 import pandas.io.sql as pdsql
 import ujson
-from ..util.config import create_api, read_yml
+from ..util.config import create_api, log_response, read_yml
 
 
 def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
@@ -15,18 +16,14 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
     logger.info('Rate tracking')
     cf = read_yml(path=config_yml)
     api = create_api(config=cf)
-    abbr = {'o': 'open', 'h': 'high', 'l': 'low', 'c': 'close'}
     candles = dict()
     for i in (instruments or cf['instruments']):
         res = api.instrument.candles(
             instrument=i, price='BA', granularity=granularity, count=int(count)
         )
+        log_response(res, logger=logger)
         candles[i] = [
-            {
-                **{abbr[k] + 'Bid': float(v) for k, v in d['bid'].items()},
-                **{abbr[k] + 'Ask': float(v) for k, v in d['ask'].items()},
-                **{k: v for k, v in d.items() if k not in ['bid', 'ask']}
-            } for d in ujson.loads(res.raw_body)['candles'] if d['complete']
+            _candlestick2dict(c) for c in res.body['candles'] if c.complete
         ]
     keys = ['instrument', 'time']
     df_all = pd.concat([
@@ -103,3 +100,16 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
         else:
             with pd.option_context('display.max_rows', None):
                 print(df_all)
+
+
+def _candlestick2dict(candlestick):
+    data_keys = ['bid', 'ask', 'mid']
+    abbr = {'o': 'open', 'h': 'high', 'l': 'low', 'c': 'close'}
+    cs_dict = vars(candlestick)
+    return {
+        **{k: v for k, v in cs_dict.items() if k not in data_keys},
+        **dict(chain.from_iterable([
+            [(abbr[k] + dk.capitalize(), float(v)) for k, v in vars(d).items()]
+            for dk, d in cs_dict.items() if dk in data_keys and d
+        ]))
+    }

@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 
-import os
 import logging
-from pprint import pformat
 import ujson
 import yaml
 from ..util.error import OandaCliRuntimeError
-from ..util.config import create_api, read_yml
+from ..util.config import create_api, log_response, read_yml
 
 
 def print_info(config_yml, instruments=[], type='accounts', print_json=False):
@@ -48,9 +46,8 @@ def print_info(config_yml, instruments=[], type='accounts', print_json=False):
         res = api.instrument.order_book(instrument=insts[0])
     elif type == 'position_book':
         res = api.instrument.position_book(instrument=insts[0])
-    logger.debug('res:{0}{1}'.format(os.linesep, pformat(vars(res))))
-    data = ujson.loads(res.raw_body)
+    log_response(res, logger=logger)
     print(
-        ujson.dumps(data) if print_json
-        else yaml.dump(data, default_flow_style=False).strip()
+        ujson.dumps(res.body) if print_json
+        else yaml.dump(res.body, default_flow_style=False).strip()
     )

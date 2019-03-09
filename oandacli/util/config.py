@@ -2,6 +2,7 @@
 
 import logging
 import os
+from pprint import pformat
 import shutil
 import v20
 import yaml
@@ -45,3 +46,12 @@ def create_api(config, stream=False, **kwargs):
         ),
         token=config['oanda']['token'], **kwargs
     )
+
+
+def log_response(response, logger=None, expected_status=200):
+    _logger = logger or logging.getLogger(__name__)
+    res_str = 'response =>{0}{1}'.format(os.linesep, pformat(vars(response)))
+    if response.status == expected_status:
+        _logger.debug(res_str)
+    else:
+        _logger.error(res_str)
