@@ -36,10 +36,10 @@ def print_info(config_yml, instruments=[], type='accounts', print_json=False):
         res = api.position.list_open(accountID=account_id)
     elif type == 'transactions':
         res = api.transaction.list(accountID=account_id)
-    elif type == 'prices':
-        res = api.pricing.get(accountID=account_id, **arg_insts)
     elif not insts:
         raise OandaCliRuntimeError('{}: instruments required'.format(type))
+    elif type == 'prices':
+        res = api.pricing.get(accountID=account_id, **arg_insts)
     elif type == 'position':
         res = api.position.get(accountID=account_id, instrument=insts[0])
     elif type == 'order_book':

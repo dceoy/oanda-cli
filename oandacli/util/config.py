@@ -48,10 +48,11 @@ def create_api(config, stream=False, **kwargs):
     )
 
 
-def log_response(response, logger=None, expected_status=200):
+def log_response(response, logger=None, expected_status_range=(100, 399)):
     _logger = logger or logging.getLogger(__name__)
     res_str = 'response =>{0}{1}'.format(os.linesep, pformat(vars(response)))
-    if response.status == expected_status:
+    esr = sorted(expected_status_range)
+    if esr[0] <= response.status <= esr[-1]:
         _logger.debug(res_str)
     else:
         _logger.error(res_str)
