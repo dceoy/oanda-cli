@@ -14,19 +14,14 @@ def read_yml(path):
     return d
 
 
-def write_config_yml(path):
+def write_config_yml(dest_path, template_path):
     logger = logging.getLogger(__name__)
-    if os.path.exists(path):
-        print('A file already exists: {}'.format(path))
+    if os.path.exists(dest_path):
+        print('A file already exists: {}'.format(dest_path))
     else:
-        logger.info('Write a config: {}'.format(path))
-        shutil.copyfile(
-            os.path.join(
-                os.path.dirname(__file__), '../static/default_oanda.yml'
-            ),
-            path
-        )
-        print('A YAML template was generated: {}'.format(path))
+        logger.info('Write a config: {}'.format(dest_path))
+        shutil.copyfile(template_path, dest_path)
+        print('A YAML template was generated: {}'.format(dest_path))
 
 
 def fetch_config_yml_path(path=None, env='OANDA_YML', default='oanda.yml'):

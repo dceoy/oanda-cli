@@ -86,7 +86,12 @@ def main():
 
 def execute_command(args, config_yml_path):
     if args['init']:
-        write_config_yml(path=config_yml_path)
+        write_config_yml(
+            dest_path=config_yml_path,
+            template_path=os.path.join(
+                os.path.dirname(__file__), '../static/default_oanda.yml'
+            )
+        )
     elif args['info']:
         print_info(
             config_yml=config_yml_path, instruments=args['<instrument>'],
