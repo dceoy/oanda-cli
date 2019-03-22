@@ -10,7 +10,7 @@ import yaml
 
 def read_yml(path):
     with open(path, 'r') as f:
-        d = yaml.load(f)
+        d = yaml.load(f, Loader=yaml.FullLoader)
     return d
 
 
