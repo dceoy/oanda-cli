@@ -12,6 +12,37 @@ Installation
 $ pip install -U https://github.com/dceoy/oanda-cli/archive/master.tar.gz
 ```
 
+Getting started
+---------------
+
+1.  Create and edit a configuration YAML file.
+
+    ```sh
+    $ oanda-cli init
+    $ vim oanda.yml     # => edit
+    ```
+
+    An account ID and an API token are required to be set in the configuration file.
+
+2.  Execute commands.
+
+    ```sh
+    # Print information
+    $ oanda-cli info account
+    $ oanda-cli info instruments
+    $ oanda-cli info positions
+
+    # Fetch past rates
+    $ oanda-cli track
+
+    # Stream market prices or authorized account transactions
+    $ oanda-cli stream                          # prices
+    $ oanda-cli stream --target=transaction     # transactions
+
+    # Close all positions
+    $ oanda-cli close
+    ```
+
 Usage
 -----
 
@@ -31,8 +62,8 @@ Usage:
     oanda-cli stream [--debug|--info] [--file=<yaml>] [--target=<str>]
                      [--csv=<path>] [--sqlite=<path>] [--use-redis]
                      [--redis-host=<ip>] [--redis-port=<int>]
-                     [--redis-db=<int>] [--redis-max-llen=<int>] [--quiet]
-                     [<instrument>...]
+                     [--redis-db=<int>] [--redis-max-llen=<int>]
+                     [--ignore-api-error] [--quiet] [<instrument>...]
     oanda-cli close [--debug|--info] [--file=<yaml>] [<instrument>...]
 
 Options:
@@ -55,6 +86,7 @@ Options:
     --redis-db=<int>    Set a Redis database (override YAML configurations)
     --redis-max-llen=<int>
                         Limit Redis list length (override YAML configurations)
+    --ignore-api-error  Ignore Oanda API connection errors
 
 Commands:
     init                Create a YAML template for configuration

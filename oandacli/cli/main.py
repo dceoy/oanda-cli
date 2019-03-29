@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-"""Command Line Interface for Oanda API
+"""
+Command Line Interface for Oanda API
 
 Usage:
     oanda-cli -h|--help
@@ -13,8 +14,8 @@ Usage:
     oanda-cli stream [--debug|--info] [--file=<yaml>] [--target=<str>]
                      [--csv=<path>] [--sqlite=<path>] [--use-redis]
                      [--redis-host=<ip>] [--redis-port=<int>]
-                     [--redis-db=<int>] [--redis-max-llen=<int>] [--quiet]
-                     [<instrument>...]
+                     [--redis-db=<int>] [--redis-max-llen=<int>]
+                     [--ignore-api-error] [--quiet] [<instrument>...]
     oanda-cli close [--debug|--info] [--file=<yaml>] [<instrument>...]
 
 Options:
@@ -37,6 +38,7 @@ Options:
     --redis-db=<int>    Set a Redis database (override YAML configurations)
     --redis-max-llen=<int>
                         Limit Redis list length (override YAML configurations)
+    --ignore-api-error  Ignore Oanda API connection errors
 
 Commands:
     init                Create a YAML template for configuration
@@ -111,7 +113,8 @@ def execute_command(args, config_yml_path):
             sqlite_path=args['--sqlite'], use_redis=args['--use-redis'],
             redis_host=args['--redis-host'], redis_port=args['--redis-port'],
             redis_db=args['--redis-db'],
-            redis_max_llen=args['--redis-max-llen'], quiet=args['--quiet']
+            redis_max_llen=args['--redis-max-llen'],
+            ignore_api_error=args['--ignore-api-error'], quiet=args['--quiet']
         )
     elif args['close']:
         close_positions(

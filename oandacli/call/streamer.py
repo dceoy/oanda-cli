@@ -15,7 +15,7 @@ from ..util.error import OandaCliRuntimeError
 
 class StreamDriver(object, metaclass=ABCMeta):
     def __init__(self, api, account_id, target='pricing', instruments=None,
-                 snapshot=True):
+                 snapshot=True, ignore_api_error=False):
         self.__logger = logging.getLogger(__name__)
         self.__api = api
         self.__account_id = account_id
@@ -27,6 +27,7 @@ class StreamDriver(object, metaclass=ABCMeta):
             self.__target = target
             self.__instruments = instruments
             self.__snapshot = snapshot
+            self.__ignore_api_error = ignore_api_error
 
     def invoke(self):
         signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -35,8 +36,11 @@ class StreamDriver(object, metaclass=ABCMeta):
             for msg_type, msg in res.parts():
                 self.act(msg_type, msg)
         except (V20ConnectionError, V20Timeout) as e:
-            self.shutdown()
-            raise e
+            if self.__ignore_api_error:
+                self.__logger.error(e)
+            else:
+                self.shutdown()
+                raise e
         else:
             log_response(res, logger=self.__logger)
 
@@ -62,17 +66,18 @@ class StreamDriver(object, metaclass=ABCMeta):
 
 class StreamRecorder(StreamDriver):
     def __init__(self, api, account_id, target='pricing', instruments=None,
-                 snapshot=True, ignore_heartbeats=True, use_redis=False,
-                 redis_host='127.0.0.1', redis_port=6379, redis_db=0,
-                 redis_max_llen=None, sqlite_path=None, csv_path=None,
-                 quiet=False):
+                 snapshot=True, ignore_api_error=False, skip_heartbeats=True,
+                 use_redis=False, redis_host='127.0.0.1', redis_port=6379,
+                 redis_db=0, redis_max_llen=None, sqlite_path=None,
+                 csv_path=None, quiet=False):
         super().__init__(
             api=api, account_id=account_id, target=target,
-            instruments=instruments, snapshot=snapshot
+            instruments=instruments, snapshot=snapshot,
+            ignore_api_error=ignore_api_error
         )
         self.__logger = logging.getLogger(__name__)
         self.__instruments = instruments
-        self.__ignore_heartbeats = ignore_heartbeats
+        self.__skip_heartbeats = skip_heartbeats
         self.__quiet = quiet
         if use_redis:
             self.__logger.info('Set a streamer with Redis')
@@ -112,7 +117,7 @@ class StreamRecorder(StreamDriver):
             self.__csv_path = None
 
     def act(self, msg_type, msg):
-        if msg_type.endswith('Heartbeat') and self.__ignore_heartbeats:
+        if msg_type.endswith('Heartbeat') and self.__skip_heartbeats:
             self.__logger.debug(msg)
         elif (msg_type.startswith('transaction.') or
               (msg_type.startswith('pricing.') and msg.instrument)):
@@ -162,7 +167,8 @@ class StreamRecorder(StreamDriver):
 def invoke_streamer(config_yml, target='pricing', instruments=None,
                     csv_path=None, sqlite_path=None, use_redis=False,
                     redis_host='127.0.0.1', redis_port=6379, redis_db=0,
-                    redis_max_llen=None, ignore_heartbeats=True, quiet=False):
+                    redis_max_llen=None, ignore_api_error=False, quiet=False,
+                    skip_heartbeats=True):
     logger = logging.getLogger(__name__)
     logger.info('Streaming')
     cf = read_yml(path=config_yml)
@@ -171,8 +177,8 @@ def invoke_streamer(config_yml, target='pricing', instruments=None,
         api=create_api(config=cf, stream=True),
         account_id=cf['oanda']['account_id'], target=target,
         instruments=(instruments or cf['instruments']), snapshot=True,
-        ignore_heartbeats=ignore_heartbeats, use_redis=use_redis,
-        redis_host=(redis_host or rd.get('host')),
+        ignore_api_error=ignore_api_error, skip_heartbeats=skip_heartbeats,
+        use_redis=use_redis, redis_host=(redis_host or rd.get('host')),
         redis_port=(redis_port or rd.get('port')),
         redis_db=(redis_db if redis_db is not None else rd.get('db')),
         redis_max_llen=redis_max_llen, sqlite_path=sqlite_path,
