@@ -10,7 +10,6 @@ import redis
 import ujson
 from v20 import V20ConnectionError, V20Timeout
 from ..util.config import create_api, log_response, read_yml
-from ..util.error import OandaCliRuntimeError
 
 
 class StreamDriver(object, metaclass=ABCMeta):
@@ -20,9 +19,9 @@ class StreamDriver(object, metaclass=ABCMeta):
         self.__api = api
         self.__account_id = account_id
         if target not in ['pricing', 'transaction']:
-            raise OandaCliRuntimeError('invalid target: {}'.format(target))
+            raise ValueError('invalid target: {}'.format(target))
         elif target == 'pricing' and not instruments:
-            raise OandaCliRuntimeError('pricing: instruments required')
+            raise ValueError('pricing: instruments required')
         else:
             self.__target = target
             self.__instruments = instruments

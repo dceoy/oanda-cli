@@ -97,7 +97,7 @@ def execute_command(args, config_yml_path):
     elif args['info']:
         print_info(
             config_yml=config_yml_path, instruments=args['<instrument>'],
-            type=args['<info_target>'], print_json=args['--json']
+            target=args['<info_target>'], print_json=args['--json']
         )
     elif args['track']:
         track_rate(

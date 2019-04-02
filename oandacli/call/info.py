@@ -3,48 +3,48 @@
 import logging
 import ujson
 import yaml
-from ..util.error import OandaCliRuntimeError
 from ..util.config import create_api, log_response, read_yml
 
 
-def print_info(config_yml, instruments=[], type='accounts', print_json=False):
+def print_info(config_yml, instruments=[], target='accounts',
+               print_json=False):
     logger = logging.getLogger(__name__)
-    available_types = [
+    available_targets = [
         'instruments', 'account', 'accounts', 'orders', 'trades', 'positions',
         'transactions', 'prices', 'position', 'order_book', 'position_book'
     ]
-    if type not in available_types:
-        raise OandaCliRuntimeError('invalid info type: {}'.format(type))
+    if target not in available_targets:
+        raise ValueError('invalid info target: {}'.format(target))
     logger.info('Information')
     cf = read_yml(path=config_yml)
     api = create_api(config=cf)
     account_id = cf['oanda']['account_id']
     insts = cf.get('instruments') or instruments
     arg_insts = {'instruments': ','.join(insts)} if insts else {}
-    logger.debug('information type: {}'.format(type))
-    if type == 'instruments':
+    logger.debug('information target: {}'.format(target))
+    if target == 'instruments':
         res = api.account.instruments(accountID=account_id, **arg_insts)
-    elif type == 'account':
+    elif target == 'account':
         res = api.account.get(accountID=account_id)
-    elif type == 'accounts':
+    elif target == 'accounts':
         res = api.account.list()
-    elif type == 'orders':
+    elif target == 'orders':
         res = api.order.list_pending(accountID=account_id)
-    elif type == 'trades':
+    elif target == 'trades':
         res = api.trade.list_open(accountID=account_id)
-    elif type == 'positions':
+    elif target == 'positions':
         res = api.position.list_open(accountID=account_id)
-    elif type == 'transactions':
+    elif target == 'transactions':
         res = api.transaction.list(accountID=account_id)
     elif not insts:
-        raise OandaCliRuntimeError('{}: instruments required'.format(type))
-    elif type == 'prices':
+        raise ValueError('{}: instruments required'.format(target))
+    elif target == 'prices':
         res = api.pricing.get(accountID=account_id, **arg_insts)
-    elif type == 'position':
+    elif target == 'position':
         res = api.position.get(accountID=account_id, instrument=insts[0])
-    elif type == 'order_book':
+    elif target == 'order_book':
         res = api.instrument.order_book(instrument=insts[0])
-    elif type == 'position_book':
+    elif target == 'position_book':
         res = api.instrument.position_book(instrument=insts[0])
     log_response(res, logger=logger)
     print(
