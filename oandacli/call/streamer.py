@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from abc import ABCMeta, abstractmethod
+from datetime import datetime
 import logging
 import os
 import signal
@@ -14,19 +15,21 @@ from ..util.config import create_api, log_response, read_yml
 
 class StreamDriver(object, metaclass=ABCMeta):
     def __init__(self, api, account_id, target='pricing', instruments=None,
-                 snapshot=True, ignore_api_error=False):
-        self.__logger = logging.getLogger(__name__)
-        self.__api = api
-        self.__account_id = account_id
+                 timeout_sec=0, snapshot=True, ignore_api_error=False):
         if target not in ['pricing', 'transaction']:
             raise ValueError('invalid target: {}'.format(target))
         elif target == 'pricing' and not instruments:
             raise ValueError('pricing: instruments required')
         else:
+            self.__logger = logging.getLogger(__name__)
+            self.__api = api
+            self.__account_id = account_id
             self.__target = target
             self.__instruments = instruments
+            self.__timeout_sec = float(timeout_sec) if timeout_sec else None
             self.__snapshot = snapshot
             self.__ignore_api_error = ignore_api_error
+            self.__latest_update_time = None
 
     def invoke(self):
         signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -34,12 +37,23 @@ class StreamDriver(object, metaclass=ABCMeta):
             res = self._call_stream_api()
             for msg_type, msg in res.parts():
                 self.act(msg_type, msg)
+                self.__latest_update_time = datetime.now()
         except (V20ConnectionError, V20Timeout) as e:
-            if self.__ignore_api_error:
-                self.__logger.error(e)
-            else:
+            if not self.__ignore_api_error:
                 self.shutdown()
                 raise e
+            elif not self.__timeout_sec:
+                self.__logger.error(e)
+            else:
+                td = datetime.now() - self.__latest_update_time
+                if td.total_seconds() > self.__timeout_sec:
+                    self.__logger.warning(
+                        'Timeout: {} sec'.format(self.__timeout_sec)
+                    )
+                    self.shutdown()
+                    raise e
+                else:
+                    self.__logger.error(e)
         else:
             log_response(res, logger=self.__logger)
 
@@ -65,14 +79,14 @@ class StreamDriver(object, metaclass=ABCMeta):
 
 class StreamRecorder(StreamDriver):
     def __init__(self, api, account_id, target='pricing', instruments=None,
-                 snapshot=True, ignore_api_error=False, skip_heartbeats=True,
-                 use_redis=False, redis_host='127.0.0.1', redis_port=6379,
-                 redis_db=0, redis_max_llen=None, sqlite_path=None,
-                 csv_path=None, quiet=False):
+                 timeout_sec=0, snapshot=True, ignore_api_error=False,
+                 skip_heartbeats=True, use_redis=False, redis_host='127.0.0.1',
+                 redis_port=6379, redis_db=0, redis_max_llen=None,
+                 sqlite_path=None, csv_path=None, quiet=False):
         super().__init__(
             api=api, account_id=account_id, target=target,
-            instruments=instruments, snapshot=snapshot,
-            ignore_api_error=ignore_api_error
+            instruments=instruments, timeout_sec=timeout_sec,
+            snapshot=snapshot, ignore_api_error=ignore_api_error
         )
         self.__logger = logging.getLogger(__name__)
         self.__instruments = instruments
@@ -164,10 +178,10 @@ class StreamRecorder(StreamDriver):
 
 
 def invoke_streamer(config_yml, target='pricing', instruments=None,
-                    csv_path=None, sqlite_path=None, use_redis=False,
-                    redis_host='127.0.0.1', redis_port=6379, redis_db=0,
-                    redis_max_llen=None, ignore_api_error=False, quiet=False,
-                    skip_heartbeats=True):
+                    timeout_sec=0, csv_path=None, sqlite_path=None,
+                    use_redis=False, redis_host='127.0.0.1', redis_port=6379,
+                    redis_db=0, redis_max_llen=None, ignore_api_error=False,
+                    quiet=False, skip_heartbeats=True):
     logger = logging.getLogger(__name__)
     logger.info('Streaming')
     cf = read_yml(path=config_yml)
@@ -175,7 +189,8 @@ def invoke_streamer(config_yml, target='pricing', instruments=None,
     streamer = StreamRecorder(
         api=create_api(config=cf, stream=True),
         account_id=cf['oanda']['account_id'], target=target,
-        instruments=(instruments or cf['instruments']), snapshot=True,
+        instruments=(instruments or cf['instruments']),
+        timeout_sec=timeout_sec, snapshot=True,
         ignore_api_error=ignore_api_error, skip_heartbeats=skip_heartbeats,
         use_redis=use_redis, redis_host=(redis_host or rd.get('host')),
         redis_port=(redis_port or rd.get('port')),

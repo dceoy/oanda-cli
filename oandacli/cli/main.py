@@ -12,8 +12,8 @@ Usage:
                     [--sqlite=<path>] [--granularity=<code>] [--count=<int>]
                     [--json] [--quiet] [<instrument>...]
     oanda-cli stream [--debug|--info] [--file=<yaml>] [--target=<str>]
-                     [--csv=<path>] [--sqlite=<path>] [--use-redis]
-                     [--redis-host=<ip>] [--redis-port=<int>]
+                     [--timeout=<sec>] [--csv=<path>] [--sqlite=<path>]
+                     [--use-redis] [--redis-host=<ip>] [--redis-port=<int>]
                      [--redis-db=<int>] [--redis-max-llen=<int>]
                      [--ignore-api-error] [--quiet] [<instrument>...]
     oanda-cli close [--debug|--info] [--file=<yaml>] [<instrument>...]
@@ -32,6 +32,8 @@ Options:
     --json              Print data with JSON
     --target=<str>      Set a streaming target [default: pricing]
                         { pricing, transaction }
+    --timeout=<sec>     Set senconds for response timeout
+    --csv=<path>        Write data with CSV into a file
     --use-redis         Use Redis for data store
     --redis-host=<ip>   Set a Redis server host (override YAML configurations)
     --redis-port=<int>  Set a Redis server port (override YAML configurations)
@@ -109,10 +111,10 @@ def execute_command(args, config_yml_path):
     elif args['stream']:
         invoke_streamer(
             config_yml=config_yml_path, target=args['--target'],
-            instruments=args['<instrument>'], csv_path=args['--csv'],
-            sqlite_path=args['--sqlite'], use_redis=args['--use-redis'],
-            redis_host=args['--redis-host'], redis_port=args['--redis-port'],
-            redis_db=args['--redis-db'],
+            instruments=args['<instrument>'], timeout_sec=args['--timeout'],
+            csv_path=args['--csv'], sqlite_path=args['--sqlite'],
+            use_redis=args['--use-redis'], redis_host=args['--redis-host'],
+            redis_port=args['--redis-port'], redis_db=args['--redis-db'],
             redis_max_llen=args['--redis-max-llen'],
             ignore_api_error=args['--ignore-api-error'], quiet=args['--quiet']
         )
