@@ -42,18 +42,16 @@ class StreamDriver(object, metaclass=ABCMeta):
             if not self.__ignore_api_error:
                 self.shutdown()
                 raise e
-            elif not self.__timeout_sec:
-                self.__logger.error(e)
             else:
-                td = datetime.now() - self.__latest_update_time
-                if td.total_seconds() > self.__timeout_sec:
-                    self.__logger.warning(
-                        'Timeout: {} sec'.format(self.__timeout_sec)
-                    )
-                    self.shutdown()
-                    raise e
-                else:
-                    self.__logger.error(e)
+                self.__logger.error(e)
+                if self.__timeout_sec and self.__latest_update_time:
+                    td = datetime.now() - self.__latest_update_time
+                    if td.total_seconds() > self.__timeout_sec:
+                        self.__logger.warning(
+                            'Timeout: {} sec'.format(self.__timeout_sec)
+                        )
+                        self.shutdown()
+                        raise e
         else:
             log_response(res, logger=self.__logger)
 
