@@ -2,8 +2,9 @@
 
 import logging
 import os
-from pprint import pformat
 import shutil
+from pprint import pformat
+
 import v20
 import yaml
 

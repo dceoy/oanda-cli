@@ -69,7 +69,9 @@ Arguments:
 
 import logging
 import os
+
 from docopt import docopt
+
 from .. import __version__
 from ..call.candle import track_rate
 from ..call.info import print_info

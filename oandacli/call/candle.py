@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
-from itertools import chain
-import os
 import logging
+import os
 import sqlite3
+from itertools import chain
+
 import pandas as pd
 import pandas.io.sql as pdsql
 import ujson
+
 from ..util.config import create_api, log_response, read_yml
 
 
