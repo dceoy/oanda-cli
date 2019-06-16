@@ -8,7 +8,7 @@ import yaml
 from ..util.config import create_api, log_response, read_yml
 
 
-def print_info(config_yml, instruments=[], target='accounts',
+def print_info(config_yml, instruments=None, target='accounts',
                print_json=False):
     logger = logging.getLogger(__name__)
     available_targets = [
@@ -21,7 +21,7 @@ def print_info(config_yml, instruments=[], target='accounts',
     cf = read_yml(path=config_yml)
     api = create_api(config=cf)
     account_id = cf['oanda']['account_id']
-    insts = cf.get('instruments') or instruments
+    insts = cf.get('instruments') or instruments or list()
     arg_insts = {'instruments': ','.join(insts)} if insts else {}
     logger.debug('information target: {}'.format(target))
     if target == 'instruments':
