@@ -4,6 +4,9 @@ from setuptools import find_packages, setup
 
 from oandacli import __version__
 
+with open('README.md', 'r') as f:
+    long_description = f.read()
+
 setup(
     name='oanda-cli',
     version=__version__,
@@ -20,24 +23,14 @@ setup(
         'console_scripts': ['oanda-cli=oandacli.cli.main:main'],
     },
     classifiers=[
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: MIT License',
-        'Operating System :: POSIX :: Linux',
-        'Operating System :: MacOS',
+        'Development Status :: 3 - Beta',
         'Environment :: Console',
-        'Development Status :: 3 - Alpha',
+        'Programming Language :: Python :: 3',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Intended Audience :: Developers',
         'Intended Audience :: Financial and Insurance Industry',
-        'Topic :: Internet',
-        'Topic :: Office/Business',
-        'Topic :: Office/Business :: Financial',
         'Topic :: Office/Business :: Financial :: Investment'
     ],
-    long_description="""\
-oanda-cli
----------
-
-Command Line Interface for Oanda API
-"""
+    python_requires='>=3.6',
+    long_description=long_description
 )
