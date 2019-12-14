@@ -5,9 +5,8 @@ import os
 import shutil
 from pprint import pformat
 
-import yaml
-
 import v20
+import yaml
 
 
 def read_yml(path):

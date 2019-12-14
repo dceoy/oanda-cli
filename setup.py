@@ -23,12 +23,13 @@ setup(
         'console_scripts': ['oanda-cli=oandacli.cli.main:main'],
     },
     classifiers=[
-        'Development Status :: 3 - Beta',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
-        'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Intended Audience :: Developers',
         'Intended Audience :: Financial and Insurance Industry',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3',
         'Topic :: Office/Business :: Financial :: Investment'
     ],
     python_requires='>=3.6',

@@ -8,7 +8,6 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime
 
 import pandas as pd
-
 import redis
 import ujson
 from v20 import V20ConnectionError, V20Timeout

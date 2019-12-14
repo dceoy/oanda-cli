@@ -2,9 +2,8 @@
 
 import logging
 
-import yaml
-
 import ujson
+import yaml
 
 from ..util.config import create_api, log_response, read_yml
 
