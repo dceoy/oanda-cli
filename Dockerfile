@@ -1,4 +1,4 @@
-FROM dceoy/oanda:latest AS builder
+FROM python:slim AS builder
 
 ADD . /tmp/oanda-cli
 
@@ -11,7 +11,7 @@ RUN set -e \
 RUN set -e \
       && pip install -U --no-cache-dir pip /tmp/oanda-cli
 
-FROM dceoy/oanda:latest
+FROM python:slim
 
 COPY --from=builder /usr/local /usr/local
 
@@ -27,4 +27,4 @@ RUN set -e \
       && apt-get clean \
       && rm -rf /var/lib/apt/lists/*
 
-ENTRYPOINT ["oanda-cli"]
+ENTRYPOINT ["/usr/local/bin/oanda-cli"]

@@ -12,4 +12,4 @@ services:
       - ${PWD}:/wd
     working_dir: /wd
     entrypoint:
-      - oanda-cli
+      - /usr/local/bin/oanda-cli

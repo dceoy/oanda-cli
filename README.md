@@ -12,6 +12,15 @@ Installation
 $ pip install -U https://github.com/dceoy/oanda-cli/archive/master.tar.gz
 ```
 
+Docker image
+------------
+
+The image is available at [Docker Hub](https://hub.docker.com/r/dceoy/oanda-cli/).
+
+```sh
+$ docker pull dceoy/oanda-cli
+```
+
 Getting started
 ---------------
 
