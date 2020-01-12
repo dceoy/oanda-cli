@@ -3,13 +3,13 @@ oanda-cli
 
 Command Line Interface for Oanda V20 REST API
 
-[![wercker status](https://app.wercker.com/status/f747d0ad7049ed7a12936e7e993ac627/m/master "wercker status")](https://app.wercker.com/project/byKey/f747d0ad7049ed7a12936e7e993ac627)
+[![wercker status](https://app.wercker.com/status/f747d0ad7049ed7a12936e7e993ac627/s/master "wercker status")](https://app.wercker.com/project/byKey/f747d0ad7049ed7a12936e7e993ac627)
 
 Installation
 ------------
 
 ```sh
-$ pip install -U https://github.com/dceoy/oanda-cli/archive/master.tar.gz
+$ pip install -U oanda-cli
 ```
 
 Docker image
