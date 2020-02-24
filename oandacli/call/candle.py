@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import json
 import logging
 import os
 import sqlite3
@@ -7,7 +8,6 @@ from itertools import chain
 
 import pandas as pd
 import pandas.io.sql as pdsql
-import ujson
 
 from ..util.config import create_api, log_response, read_yml
 
@@ -98,7 +98,7 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
                 pdsql.to_sql(df_all, 'candle', con, if_exists='append')
     if not quiet:
         if print_json:
-            print(ujson.dumps(candles, indent=2))
+            print(json.dumps(candles, indent=2))
         else:
             with pd.option_context('display.max_rows', None):
                 print(df_all)

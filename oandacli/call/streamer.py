@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import json
 import logging
 import os
 import signal
@@ -9,7 +10,6 @@ from datetime import datetime
 
 import pandas as pd
 import redis
-import ujson
 from v20 import V20ConnectionError, V20Timeout
 
 from ..util.config import create_api, log_response, read_yml
@@ -140,7 +140,7 @@ class StreamRecorder(StreamDriver):
             self.__logger.warning('Save skipped: {}'.format(msg))
 
     def _print_and_write_msg(self, msg_type, msg):
-        msg_json_str = ujson.dumps(msg)
+        msg_json_str = json.dumps(msg)
         if not self.__quiet:
             print(msg_json_str, flush=True)
         inst = msg.instrument or ''

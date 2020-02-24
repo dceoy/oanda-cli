@@ -1,4 +1,4 @@
-FROM python:slim AS builder
+FROM python:3.7-slim-stretch AS builder
 
 ADD . /tmp/oanda-cli
 
@@ -11,7 +11,7 @@ RUN set -e \
 RUN set -e \
       && pip install -U --no-cache-dir pip /tmp/oanda-cli
 
-FROM python:slim
+FROM python:3.7-slim-stretch
 
 COPY --from=builder /usr/local /usr/local
 

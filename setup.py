@@ -18,9 +18,7 @@ setup(
     url='https://github.com/dceoy/oanda-cli',
     packages=find_packages(),
     include_package_data=True,
-    install_requires=[
-        'docopt', 'pandas', 'pyyaml', 'redis', 'ujson', 'v20'
-    ],
+    install_requires=['docopt', 'pandas', 'pyyaml', 'redis', 'v20'],
     entry_points={'console_scripts': ['oanda-cli=oandacli.cli.main:main']},
     classifiers=[
         'Development Status :: 4 - Beta',

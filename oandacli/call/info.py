@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
+import json
 import logging
 
-import ujson
 import yaml
 
 from ..util.config import create_api, log_response, read_yml
@@ -50,6 +50,6 @@ def print_info(config_yml, instruments=None, target='accounts',
         res = api.instrument.position_book(instrument=insts[0])
     log_response(res, logger=logger)
     print(
-        ujson.dumps(res.body) if print_json
+        json.dumps(res.body) if print_json
         else yaml.dump(res.body, default_flow_style=False).strip()
     )
