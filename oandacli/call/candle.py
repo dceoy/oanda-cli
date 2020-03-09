@@ -107,11 +107,13 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
 def _candlestick2dict(candlestick):
     data_keys = ['bid', 'ask', 'mid']
     abbr = {'o': 'open', 'h': 'high', 'l': 'low', 'c': 'close'}
-    cs_dict = vars(candlestick)
+    cs_dict = candlestick.dict()
     return {
         **{k: v for k, v in cs_dict.items() if k not in data_keys},
-        **dict(chain.from_iterable([
-            [(abbr[k] + dk.capitalize(), float(v)) for k, v in vars(d).items()]
-            for dk, d in cs_dict.items() if dk in data_keys and d
-        ]))
+        **dict(
+            chain.from_iterable([
+                [(abbr[k] + dk.capitalize(), float(v)) for k, v in d.items()]
+                for dk, d in cs_dict.items() if dk in data_keys and d
+            ])
+        )
     }

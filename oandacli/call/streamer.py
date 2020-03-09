@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import json
 import logging
 import os
 import signal
@@ -140,7 +139,7 @@ class StreamRecorder(StreamDriver):
             self.__logger.warning('Save skipped: {}'.format(msg))
 
     def _print_and_write_msg(self, msg_type, msg):
-        msg_json_str = json.dumps(msg)
+        msg_json_str = str(msg.json())
         if not self.__quiet:
             print(msg_json_str, flush=True)
         inst = msg.instrument or ''
