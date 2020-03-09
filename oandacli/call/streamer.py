@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 import logging
-import os
 import signal
 import sqlite3
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 import redis
@@ -106,25 +106,23 @@ class StreamRecorder(StreamDriver):
             self.__redis_max_llen = None
         if sqlite_path:
             self.__logger.info('Set a streamer with SQLite')
-            sqlite_abspath = os.path.abspath(
-                os.path.expanduser(os.path.expandvars(sqlite_path))
-            )
-            if os.path.isfile(sqlite_abspath):
-                self.__sqlite = sqlite3.connect(sqlite_abspath)
+            sqlite_file = Path(sqlite_path).resolve()
+            if sqlite_file.is_file():
+                self.__sqlite = sqlite3.connect(str(sqlite_file))
             else:
-                schema_sql_path = os.path.join(
-                    os.path.dirname(__file__), '../static/create_tables.sql'
+                schema_sql_path = str(
+                    Path(__file__).parent.parent.joinpath(
+                        'static/create_tables.sql'
+                    )
                 )
                 with open(schema_sql_path, 'r') as f:
                     sql = f.read()
-                self.__sqlite = sqlite3.connect(sqlite_abspath)
+                self.__sqlite = sqlite3.connect(str(sqlite_file))
                 self.__sqlite.executescript(sql)
         else:
             self.__sqlite = None
         if csv_path:
-            self.__csv_path = os.path.abspath(
-                os.path.expanduser(os.path.expandvars(csv_path))
-            )
+            self.__csv_path = str(Path(csv_path).resolve())
         else:
             self.__csv_path = None
 
@@ -166,7 +164,7 @@ class StreamRecorder(StreamDriver):
             ).to_csv(
                 self.__csv_path, mode='a',
                 sep=(',' if self.__csv_path.endswith('.csv') else '\t'),
-                header=(not os.path.isfile(self.__csv_path))
+                header=(not Path(self.__csv_path).is_file())
             )
 
     def shutdown(self):

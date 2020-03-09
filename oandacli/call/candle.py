@@ -5,6 +5,7 @@ import logging
 import os
 import sqlite3
 from itertools import chain
+from pathlib import Path
 
 import pandas as pd
 import pandas.io.sql as pdsql
@@ -32,10 +33,9 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
         pd.DataFrame(c).assign(instrument=i) for i, c in candles.items()
     ]).drop(columns=['complete']).set_index(keys)
     if csv_dir_path:
-        csv_dir_abspath = os.path.abspath(
-            os.path.expanduser(os.path.expandvars(csv_dir_path))
-        )
-        os.makedirs(csv_dir_abspath, exist_ok=True)
+        csv_dir = Path(csv_dir_path).resolve()
+        if not csv_dir.is_dir():
+            csv_dir.mkdir()
         df_all_day = df_all.reset_index().assign(
             datetime=lambda d: pd.to_datetime(d['time'])
         ).assign(
@@ -46,11 +46,12 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
                 df_csv = df_all_day.pipe(
                     lambda d: d[(d['date'] == t) & (d['instrument'] == i)]
                 ).drop(columns=['date', 'instrument'])
-                csv_path = os.path.join(
-                    csv_dir_abspath,
-                    'candle.{0}.{1}.{2}.csv'.format(granularity, i, t)
+                csv_path = str(
+                    csv_dir.joinpath(
+                        'candle.{0}.{1}.{2}.csv'.format(granularity, i, t)
+                    )
                 )
-                if os.path.isfile(csv_path):
+                if Path(csv_path).is_file():
                     df_csv_new = df_csv.append(
                         pd.read_csv(csv_path).assign(
                             datetime=lambda d: pd.to_datetime(d['time'])
@@ -67,11 +68,9 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
                 df_csv_new.to_csv(csv_path, mode='w', header=True, sep=',')
     if sqlite_path:
         logger.debug('df_all.shape: {}'.format(df_all.shape))
-        sqlite_abspath = os.path.abspath(
-            os.path.expanduser(os.path.expandvars(sqlite_path))
-        )
-        if os.path.isfile(sqlite_abspath):
-            with sqlite3.connect(sqlite_abspath) as con:
+        sqlite_file = Path(sqlite_path).resolve()
+        if sqlite_file.is_file():
+            with sqlite3.connect(str(sqlite_file)) as con:
                 df_db_diff = df_all.join(
                     pdsql.read_sql(
                         'SELECT instrument, time FROM candle;', con
@@ -87,12 +86,14 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
                 )
                 pdsql.to_sql(df_db_diff, 'candle', con, if_exists='append')
         else:
-            schema_sql_path = os.path.join(
-                os.path.dirname(__file__), '../static/create_tables.sql'
+            schema_sql_path = str(
+                Path(__file__).parent.parent.joinpath(
+                    'static/create_tables.sql'
+                )
             )
             with open(schema_sql_path, 'r') as f:
                 schema_sql = f.read()
-            with sqlite3.connect(sqlite_abspath) as con:
+            with sqlite3.connect(str(sqlite_file)) as con:
                 con.executescript(schema_sql)
                 logger.debug('df_all:{0}{1}'.format(os.linesep, df_all))
                 pdsql.to_sql(df_all, 'candle', con, if_exists='append')

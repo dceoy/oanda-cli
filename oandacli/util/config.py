@@ -3,6 +3,7 @@
 import logging
 import os
 import shutil
+from pathlib import Path
 from pprint import pformat
 
 import v20
@@ -17,7 +18,7 @@ def read_yml(path):
 
 def write_config_yml(dest_path, template_path):
     logger = logging.getLogger(__name__)
-    if os.path.exists(dest_path):
+    if Path(dest_path).exists():
         print('A file already exists: {}'.format(dest_path))
     else:
         logger.info('Write a config: {}'.format(dest_path))
@@ -28,8 +29,8 @@ def write_config_yml(dest_path, template_path):
 def fetch_config_yml_path(path=None, env='OANDA_YML', default='oanda.yml'):
     logger = logging.getLogger(__name__)
     p = [
-        os.path.abspath(os.path.expanduser(os.path.expandvars(p)))
-        for p in [path, os.getenv(env), default] if p is not None
+        str(Path(p).resolve()) for p in [path, os.getenv(env), default]
+        if p is not None
     ][0]
     logger.debug('abspath to a config: {}'.format(p))
     return p

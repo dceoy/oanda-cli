@@ -69,6 +69,7 @@ Arguments:
 
 import logging
 import os
+from pathlib import Path
 
 from docopt import docopt
 
@@ -94,8 +95,10 @@ def execute_command(args, config_yml_path):
     if args['init']:
         write_config_yml(
             dest_path=config_yml_path,
-            template_path=os.path.join(
-                os.path.dirname(__file__), '../static/default_oanda.yml'
+            template_path=str(
+                Path(__file__).parent.parent.joinpath(
+                    'static/default_oanda.yml'
+                )
             )
         )
     elif args['info']:
