@@ -1,13 +1,14 @@
 ---
 box:
-  id: dceoy/jupyter:latest
+  id: dceoy/oanda:latest
   entrypoint: /bin/bash -c
 test:
   steps:
     - script:
         name: Install oanda-cli
         code: |
-          pip install -U .
+          pip install -U \
+            flake8 flake8-bugbear flake8-isort pep8-naming .
     - script:
         name: Validate the codes using flake8
         code: |
