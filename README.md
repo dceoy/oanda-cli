@@ -4,6 +4,7 @@ oanda-cli
 Command Line Interface for Oanda V20 REST API
 
 [![wercker status](https://app.wercker.com/status/f747d0ad7049ed7a12936e7e993ac627/s/master "wercker status")](https://app.wercker.com/project/byKey/f747d0ad7049ed7a12936e7e993ac627)
+![Upload Python Package](https://github.com/dceoy/oanda-cli/workflows/Upload%20Python%20Package/badge.svg)
 
 Installation
 ------------
