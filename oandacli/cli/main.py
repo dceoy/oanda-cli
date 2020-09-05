@@ -4,7 +4,7 @@ Command Line Interface for Oanda API
 
 Usage:
     oanda-cli -h|--help
-    oanda-cli -v|--version
+    oanda-cli --version
     oanda-cli init [--debug|--info] [--file=<yaml>]
     oanda-cli info [--debug|--info] [--file=<yaml>] [--json] <info_target>
                    [<instrument>...]
@@ -20,7 +20,7 @@ Usage:
 
 Options:
     -h, --help          Print help and exit
-    -v, --version       Print version and exit
+    --version           Print version and exit
     --debug, --info     Execute a command with debug|info messages
     --file=<yaml>       Set a path to a YAML for configurations [$OANDA_YML]
     --quiet             Suppress messages
