@@ -1,8 +1,8 @@
 ---
 oanda:                    # required
   environment: trade      # { trade, practice }
-  token: ''
-  account_id: ''
+  token: e6ab562b039325f12a026c6fdb7b71bb-b3d8721445817159410f01514acd19hbc
+  account_id: 101-001-100000-001
 redis:
   host: 127.0.0.1
   port: 6379

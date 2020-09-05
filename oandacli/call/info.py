@@ -36,7 +36,7 @@ def print_info(config_yml, instruments=None, target='accounts',
     elif target == 'positions':
         res = api.position.list_open(accountID=account_id)
     elif target == 'transactions':
-        res = api.transaction.list(accountID=account_id)
+        res = api.transaction.since(accountID=account_id, id='0')
     elif not insts:
         raise ValueError('{}: instruments required'.format(target))
     elif target == 'prices':
