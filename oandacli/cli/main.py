@@ -17,8 +17,8 @@ Usage:
                      [--redis-db=<int>] [--redis-max-llen=<int>]
                      [--ignore-api-error] [--quiet] [<instrument>...]
     oanda-cli transaction [--debug|--info] [--file=<yaml>] [--from=<date>]
-                          [--to=<date>] [--csv=<path>] [--pl-graph=<path>]
-                          [--json] [--quiet]
+                          [--to=<date>] [--csv=<path>] [--sqlite=<path>]
+                          [--pl-graph=<path>] [--json] [--quiet]
     oanda-cli close [--debug|--info] [--file=<yaml>] [<instrument>...]
 
 Options:
@@ -53,7 +53,7 @@ Commands:
     info                Print information about <info_target>
     track               Fetch past rates
     stream              Stream market prices or authorized account events
-    transaction         Fetch past transactions
+    transaction         Fetch the latest transactions
     close               Close positions (if not <instrument>, close all)
 
 Arguments:
@@ -134,8 +134,8 @@ def execute_command(args, config_yml_path):
         track_transaction(
             config_yml=config_yml_path, from_time=args['--from'],
             to_time=args['--to'], csv_path=args['--csv'],
-            pl_graph_path=args['--pl-graph'], print_json=args['--json'],
-            quiet=args['--quiet']
+            sqlite_path=args['--sqlite'], pl_graph_path=args['--pl-graph'],
+            print_json=args['--json'], quiet=args['--quiet']
         )
     elif args['close']:
         close_positions(
