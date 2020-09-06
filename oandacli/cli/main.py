@@ -17,7 +17,8 @@ Usage:
                      [--redis-db=<int>] [--redis-max-llen=<int>]
                      [--ignore-api-error] [--quiet] [<instrument>...]
     oanda-cli transaction [--debug|--info] [--file=<yaml>] [--from=<date>]
-                          [--to=<date>] [--csv=<path>] [--json] [--quiet]
+                          [--to=<date>] [--csv=<path>] [--pl-graph=<path>]
+                          [--json] [--quiet]
     oanda-cli close [--debug|--info] [--file=<yaml>] [<instrument>...]
 
 Options:
@@ -45,6 +46,7 @@ Options:
     --ignore-api-error  Ignore Oanda API connection errors
     --from=<date>       Specify the starting time
     --to=<date>         Specify the ending time
+    --pl-graph=<path>   Visualize cumulative PL in a file
 
 Commands:
     init                Create a YAML template for configuration
@@ -132,7 +134,8 @@ def execute_command(args, config_yml_path):
         track_transaction(
             config_yml=config_yml_path, from_time=args['--from'],
             to_time=args['--to'], csv_path=args['--csv'],
-            print_json=args['--json'], quiet=args['--quiet']
+            pl_graph_path=args['--pl-graph'], print_json=args['--json'],
+            quiet=args['--quiet']
         )
     elif args['close']:
         close_positions(

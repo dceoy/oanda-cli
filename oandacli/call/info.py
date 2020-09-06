@@ -5,7 +5,9 @@ import logging
 import time
 
 import pandas as pd
+import seaborn as sns
 import yaml
+from matplotlib.pylab import rcParams
 
 from ..util.config import create_api, log_response, read_yml
 
@@ -57,10 +59,10 @@ def print_info(config_yml, instruments=None, target='accounts',
 
 
 def track_transaction(config_yml, from_time=None, to_time=None, csv_path=None,
-                      print_json=False, quiet=False):
+                      pl_graph_path=None, print_json=False, quiet=False):
     logger = logging.getLogger(__name__)
     logger.info('Transaction tracking')
-    transactions = fetch_transactions(
+    transactions = _fetch_transactions(
         config_yml=config_yml, from_time=from_time, to_time=to_time
     )
     df_txn = (
@@ -68,8 +70,11 @@ def track_transaction(config_yml, from_time=None, to_time=None, csv_path=None,
         if transactions else pd.DataFrame()
     )
     logger.debug('df_txn.shape: {}'.format(df_txn.shape))
-    if csv_path and transactions:
-        df_txn.to_csv(csv_path)
+    if transactions:
+        if csv_path:
+            df_txn.to_csv(csv_path)
+        if pl_graph_path:
+            _plot_pl(transactions=transactions, path=pl_graph_path)
     if not quiet:
         print(
             json.dumps(transactions, indent=2) if print_json
@@ -77,7 +82,7 @@ def track_transaction(config_yml, from_time=None, to_time=None, csv_path=None,
         )
 
 
-def fetch_transactions(config_yml, from_time=None, to_time=None):
+def _fetch_transactions(config_yml, from_time=None, to_time=None):
     logger = logging.getLogger(__name__)
     cf = read_yml(path=config_yml)
     api = create_api(config=cf)
@@ -107,3 +112,36 @@ def _parse_idrange(page):
     return dict([
         s.split('=') for s in page.split('?')[1].replace('=', 'ID=').split('&')
     ])
+
+
+def _plot_pl(transactions, path):
+    rcParams['figure.figsize'] = (11.88, 8.40)  # A4 aspect: (297x210)
+    sns.set(style='ticks', color_codes=True)
+    sns.set_context('paper')
+    df_pl = _extract_df_pl(transactions=transactions).set_index(
+        ['instrument', 'time']
+    )['pl'].unstack(
+        level=0, fill_value=0
+    ).cumsum().stack().to_frame('PL').reset_index()
+    logging.info(df_pl)
+    sns.set_palette(palette='colorblind')
+    ax = sns.lineplot(
+        x='time', y='PL', hue='instrument', data=df_pl, alpha=0.8,
+        legend='full'
+    )
+    ax.set_title('Cumulative PL')
+    ax.legend(loc='upper left', bbox_to_anchor=(1, 1), ncol=1)
+    ax.figure.savefig(path)
+
+
+def _extract_df_pl(transactions):
+    cols = ['time', 'accountBalance', 'instrument', 'units', 'price', 'pl']
+    return pd.DataFrame([
+        {k: v for k, v in t.items() if k in cols}
+        for t in transactions if t.get('accountBalance')
+    ]).assign(
+        time=lambda d: pd.to_datetime(d['time']),
+        pl=lambda d: d['pl'].astype(float).fillna(0)
+    ).pipe(
+        lambda d: d[d['instrument'].notna()]
+    )
