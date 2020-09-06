@@ -60,6 +60,25 @@ def track_transaction(config_yml, from_time=None, to_time=None, csv_path=None,
                       print_json=False, quiet=False):
     logger = logging.getLogger(__name__)
     logger.info('Transaction tracking')
+    transactions = fetch_transactions(
+        config_yml=config_yml, from_time=from_time, to_time=to_time
+    )
+    df_txn = (
+        pd.DataFrame(transactions).set_index('time')
+        if transactions else pd.DataFrame()
+    )
+    logger.debug('df_txn.shape: {}'.format(df_txn.shape))
+    if csv_path and transactions:
+        df_txn.to_csv(csv_path)
+    if not quiet:
+        print(
+            json.dumps(transactions, indent=2) if print_json
+            else yaml.dump(transactions, default_flow_style=False).strip()
+        )
+
+
+def fetch_transactions(config_yml, from_time=None, to_time=None):
+    logger = logging.getLogger(__name__)
     cf = read_yml(path=config_yml)
     api = create_api(config=cf)
     account_id = cf['oanda']['account_id']
@@ -81,18 +100,7 @@ def track_transaction(config_yml, from_time=None, to_time=None, csv_path=None,
         transactions.extend(
             json.loads(r.raw_body).get('transactions') or list()
         )
-    df_txn = (
-        pd.DataFrame(transactions).set_index('time')
-        if transactions else pd.DataFrame()
-    )
-    logger.debug('df_txn.shape: {}'.format(df_txn.shape))
-    if csv_path and df_txn.size > 0:
-        df_txn.to_csv(csv_path)
-    if not quiet:
-        print(
-            json.dumps(transactions, indent=2) if print_json
-            else yaml.dump(transactions, default_flow_style=False).strip()
-        )
+    return transactions
 
 
 def _parse_idrange(page):
