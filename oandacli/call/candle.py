@@ -79,7 +79,7 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
                     ).set_index(keys),
                     on=keys, how='left'
                 ).pipe(
-                    lambda d: d[d['in_db'].isnull()].drop(columns=['in_db'])
+                    lambda d: d[d['in_db'].isna()].drop(columns=['in_db'])
                 )
                 logger.debug(
                     'df_db_diff:{0}{1}'.format(os.linesep, df_db_diff)
