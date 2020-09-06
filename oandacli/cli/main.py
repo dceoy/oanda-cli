@@ -16,6 +16,8 @@ Usage:
                      [--use-redis] [--redis-host=<ip>] [--redis-port=<int>]
                      [--redis-db=<int>] [--redis-max-llen=<int>]
                      [--ignore-api-error] [--quiet] [<instrument>...]
+    oanda-cli transaction [--debug|--info] [--file=<yaml>] [--from=<date>]
+                          [--to=<date>] [--csv=<path>] [--json] [--quiet]
     oanda-cli close [--debug|--info] [--file=<yaml>] [<instrument>...]
 
 Options:
@@ -41,18 +43,21 @@ Options:
     --redis-max-llen=<int>
                         Limit Redis list length (override YAML configurations)
     --ignore-api-error  Ignore Oanda API connection errors
+    --from=<date>       Specify the starting time
+    --to=<date>         Specify the ending time
 
 Commands:
     init                Create a YAML template for configuration
     info                Print information about <info_target>
     track               Fetch past rates
     stream              Stream market prices or authorized account events
+    transaction         Fetch past transactions
     close               Close positions (if not <instrument>, close all)
 
 Arguments:
     <info_target>       { instruments, prices, account, accounts, orders,
-                          trades, positions, position, transactions,
-                          order_book, position_book }
+                          trades, positions, position, order_book,
+                          position_book }
     <instrument>        { AUD_CAD, AUD_CHF, AUD_HKD, AUD_JPY, AUD_NZD, AUD_SGD,
                           AUD_USD, CAD_CHF, CAD_HKD, CAD_JPY, CAD_SGD, CHF_HKD,
                           CHF_JPY, CHF_ZAR, EUR_AUD, EUR_CAD, EUR_CHF, EUR_CZK,
@@ -75,7 +80,7 @@ from docopt import docopt
 
 from .. import __version__
 from ..call.candle import track_rate
-from ..call.info import print_info
+from ..call.info import print_info, track_transaction
 from ..call.order import close_positions
 from ..call.streamer import invoke_streamer
 from ..util.config import fetch_config_yml_path, write_config_yml
@@ -122,6 +127,12 @@ def execute_command(args, config_yml_path):
             redis_port=args['--redis-port'], redis_db=args['--redis-db'],
             redis_max_llen=args['--redis-max-llen'],
             ignore_api_error=args['--ignore-api-error'], quiet=args['--quiet']
+        )
+    elif args['transaction']:
+        track_transaction(
+            config_yml=config_yml_path, from_time=args['--from'],
+            to_time=args['--to'], csv_path=args['--csv'],
+            print_json=args['--json'], quiet=args['--quiet']
         )
     elif args['close']:
         close_positions(

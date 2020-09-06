@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
+import json
 import logging
+import time
 
+import pandas as pd
 import yaml
 
 from ..util.config import create_api, log_response, read_yml
@@ -35,8 +38,6 @@ def print_info(config_yml, instruments=None, target='accounts',
         res = api.trade.list_open(accountID=account_id)
     elif target == 'positions':
         res = api.position.list_open(accountID=account_id)
-    elif target == 'transactions':
-        res = api.transaction.since(accountID=account_id, id='0')
     elif not insts:
         raise ValueError('{}: instruments required'.format(target))
     elif target == 'prices':
@@ -48,7 +49,53 @@ def print_info(config_yml, instruments=None, target='accounts',
     elif target == 'position_book':
         res = api.instrument.position_book(instrument=insts[0])
     log_response(res, logger=logger)
+    data = json.loads(res.raw_body)
     print(
-        res.raw_body if print_json
-        else yaml.dump(res.body, default_flow_style=False).strip()
+        json.dumps(data, indent=2) if print_json
+        else yaml.dump(data, default_flow_style=False).strip()
     )
+
+
+def track_transaction(config_yml, from_time=None, to_time=None, csv_path=None,
+                      print_json=False, quiet=False):
+    logger = logging.getLogger(__name__)
+    logger.info('Transaction tracking')
+    cf = read_yml(path=config_yml)
+    api = create_api(config=cf)
+    account_id = cf['oanda']['account_id']
+    res = api.transaction.list(
+        accountID=account_id,
+        **{
+            k: v for k, v
+            in {'fromTime': from_time, 'toTime': to_time}.items() if v
+        }
+    )
+    log_response(res, logger=logger)
+    transactions = list()
+    for page in (res.body.get('pages') or list()):
+        time.sleep(0.5)
+        r = api.transaction.range(
+            accountID=account_id, **_parse_idrange(page=page)
+        )
+        log_response(r, logger=logger)
+        transactions.extend(
+            json.loads(r.raw_body).get('transactions') or list()
+        )
+    df_txn = (
+        pd.DataFrame(transactions).set_index('time')
+        if transactions else pd.DataFrame()
+    )
+    logger.debug('df_txn.shape: {}'.format(df_txn.shape))
+    if csv_path and df_txn.size > 0:
+        df_txn.to_csv(csv_path)
+    if not quiet:
+        print(
+            json.dumps(transactions, indent=2) if print_json
+            else yaml.dump(transactions, default_flow_style=False).strip()
+        )
+
+
+def _parse_idrange(page):
+    return dict([
+        s.split('=') for s in page.split('?')[1].replace('=', 'ID=').split('&')
+    ])
