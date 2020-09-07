@@ -47,7 +47,7 @@ Options:
     --ignore-api-error  Ignore Oanda API connection errors
     --from=<date>       Specify the starting time
     --to=<date>         Specify the ending time
-    --pl-graph=<path>   Visualize cumulative PL in a file
+    --pl-graph=<path>   Visualize PL in a graphics file such as PDF or PNG
 
 Commands:
     init                Create a YAML template for configuration
@@ -75,7 +75,7 @@ Arguments:
                           USD_JPY, USD_MXN, USD_NOK, USD_PLN, USD_SAR, USD_SEK,
                           USD_SGD, USD_THB, USD_TRY, USD_ZAR, ZAR_JPY }
     <data_path>         Path to an input CSV or SQLite file
-    <graph_path>        Path to an output graph file
+    <graph_path>        Path to an output graphics file such as PDF or PNG
 """
 
 import logging

@@ -61,7 +61,6 @@ def plot_pl(df_txn, path):
         pl=lambda d: d['pl'].fillna(0)
     )
     logger.debug(f'df_pl:{os.linesep}{df_pl}')
-    time_range = [df_pl['time'].min(), df_pl['time'].max()]
     df_cumpl = df_pl.set_index(['instrument', 'time'])['pl'].unstack(
         level=0, fill_value=0
     ).cumsum().stack().to_frame('pl').reset_index()
@@ -86,13 +85,16 @@ def plot_pl(df_txn, path):
         )
     }
     alpha = 0.7
+    time_range = (df_pl['time'].min(), df_pl['time'].max())
+    ylim_ratio = 1.2
 
     for i, d in df_cumpl.groupby('instrument'):
         axes[0].plot(
             'time', 'pl', label=i, color=colors[i], data=d, alpha=alpha
         )
     axes[0].set(
-        title='Cumulative PL', ylabel='pl', xlim=time_range
+        title='Cumulative Profit and Loss', ylabel='pl', xlim=time_range,
+        ylim=(pd.Series([-1, 1]) * df_cumpl['pl'].abs().max() * ylim_ratio)
     )
 
     for i, d in df_margin.groupby('instrument'):
@@ -101,8 +103,9 @@ def plot_pl(df_txn, path):
             data=d, alpha=alpha, width=0.02
         )
     axes[1].set(
-        title='Initial Margins for Trades Opened',
-        ylabel='initialMarginRequired', xlim=time_range
+        title='Initial Margins of Trades',
+        ylabel='initialMarginRequired', xlim=time_range,
+        ylim=(0, df_margin['initialMarginRequired'].max() * ylim_ratio)
     )
 
     axes[2].fill_between(
@@ -110,7 +113,7 @@ def plot_pl(df_txn, path):
     )
     axes[2].set(
         title='Account Balance', xlabel='time', ylabel='accountBalance',
-        xlim=time_range
+        xlim=time_range, ylim=(0, df_pl['accountBalance'].max() * ylim_ratio)
     )
 
     sns.despine()
