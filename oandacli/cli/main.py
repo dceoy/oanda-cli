@@ -19,6 +19,7 @@ Usage:
     oanda-cli transaction [--debug|--info] [--file=<yaml>] [--from=<date>]
                           [--to=<date>] [--csv=<path>] [--sqlite=<path>]
                           [--pl-graph=<path>] [--json] [--quiet]
+    oanda-cli plotpl [--debug|--info] <data_path> <graph_path>
     oanda-cli close [--debug|--info] [--file=<yaml>] [<instrument>...]
 
 Options:
@@ -54,6 +55,7 @@ Commands:
     track               Fetch past rates
     stream              Stream market prices or authorized account events
     transaction         Fetch the latest transactions
+    plotpl              Visualize cumulative PL in a file
     close               Close positions (if not <instrument>, close all)
 
 Arguments:
@@ -72,6 +74,8 @@ Arguments:
                           USD_CNH, USD_CZK, USD_DKK, USD_HKD, USD_HUF, USD_INR,
                           USD_JPY, USD_MXN, USD_NOK, USD_PLN, USD_SAR, USD_SEK,
                           USD_SGD, USD_THB, USD_TRY, USD_ZAR, ZAR_JPY }
+    <data_path>         Path to an input CSV or SQLite file
+    <graph_path>        Path to an output graph file
 """
 
 import logging
@@ -84,6 +88,7 @@ from .. import __version__
 from ..call.candle import track_rate
 from ..call.info import print_info, track_transaction
 from ..call.order import close_positions
+from ..call.plot import read_and_plot_pl
 from ..call.streamer import invoke_streamer
 from ..util.config import fetch_config_yml_path, write_config_yml
 from ..util.logger import set_log_config
@@ -136,6 +141,10 @@ def execute_command(args, config_yml_path):
             to_time=args['--to'], csv_path=args['--csv'],
             sqlite_path=args['--sqlite'], pl_graph_path=args['--pl-graph'],
             print_json=args['--json'], quiet=args['--quiet']
+        )
+    elif args['plotpl']:
+        read_and_plot_pl(
+            data_path=args['<data_path>'], graph_path=args['<graph_path>']
         )
     elif args['close']:
         close_positions(

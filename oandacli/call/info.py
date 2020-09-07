@@ -10,6 +10,7 @@ from pathlib import Path
 import pandas as pd
 import pandas.io.sql as pdsql
 import yaml
+from pandas.api.types import is_object_dtype
 
 from ..util.config import create_api, log_response, read_yml
 from .plot import plot_pl
@@ -70,43 +71,65 @@ def track_transaction(config_yml, from_time=None, to_time=None, csv_path=None,
         config_yml=config_yml, from_time=from_time, to_time=to_time
     )
     df_txn = (
-        pd.DataFrame(transactions, dtype=str).assign(
-            id=lambda d: d['id'].astype(int)
+        pd.DataFrame(transactions).astype(
+            dtype=dict(
+                [(k, int) for k in ['id', 'userID', 'batchID']] + [
+                    (k, float) for k in [
+                        'units', 'requestID', 'orderID', 'requestedUnits',
+                        'price', 'pl', 'financing', 'commission',
+                        'accountBalance', 'gainQuoteHomeConversionFactor',
+                        'lossQuoteHomeConversionFactor',
+                        'guaranteedExecutionFee', 'halfSpreadCost', 'fullVWAP',
+                        'tradeID', 'distance', 'closedTradeID',
+                        'tradeCloseTransactionID', 'amount'
+                    ]
+                ]
+            )
         ).set_index('id')
         if transactions else pd.DataFrame()
     )
     logger.debug(f'df_txn:{os.linesep}{df_txn}')
     if transactions:
         if csv_path:
-            (
-                pd.read_csv(
-                    csv_path, index_col='id'
-                ).append(df_txn).drop_duplicates().sort_index()
-                if Path(csv_path).is_file() else df_txn
-            ).to_csv(csv_path)
+            if Path(csv_path).is_file():
+                old_ids = set(
+                    pd.read_csv(csv_path, usecols=['id'], dtype=int)['id']
+                )
+                df_txn.pipe(
+                    lambda d: d[~d.index.isin(old_ids)]
+                ).to_csv(csv_path, mode='a', header=False)
+            else:
+                df_txn.to_csv(csv_path)
         if sqlite_path:
             db_exists = Path(sqlite_path).is_file()
-            tbl = 'history'
+            tbl = 'transaction_history'
             with sqlite3.connect(sqlite_path) as con:
                 tbl_exists = (
                     db_exists
                     and tbl in pdsql.read_sql(
                         'SELECT name FROM sqlite_master WHERE type = "table";',
-                        con
+                        con=con
                     )['name'].to_list()
                 )
-                old_ids = (
-                    set(pdsql.read_sql(f'SELECT id FROM {tbl};', con)['id'])
-                    if tbl_exists else set()
+                old_ids = set(
+                    pdsql.read_sql(f'SELECT id FROM {tbl};', con=con)['id']
+                    if tbl_exists else list()
                 )
-                df_new = df_txn.pipe(
-                    lambda d: d[~d.index.isin(old_ids)]
-                )
+                df_new = df_txn.pipe(lambda d: d[~d.index.isin(old_ids)])
                 logger.debug(f'df_new:{os.linesep}{df_new}')
                 if df_new.size > 0:
-                    pdsql.to_sql(df_new, tbl, con, if_exists='append')
+                    pdsql.to_sql(
+                        df_new.astype(
+                            dtype={
+                                k: str for k in df_new.dtypes.pipe(
+                                    lambda a: a[a.apply(is_object_dtype)]
+                                ).index
+                            }
+                        ),
+                        name=tbl, con=con, if_exists='append'
+                    )
         if pl_graph_path:
-            plot_pl(transactions=transactions, path=pl_graph_path)
+            plot_pl(df_txn=df_txn, path=pl_graph_path)
     if not quiet:
         print(
             json.dumps(transactions, indent=2) if print_json
