@@ -23,14 +23,14 @@ def print_info(config_yml, instruments=None, target='accounts',
         'transactions', 'prices', 'position', 'order_book', 'position_book'
     ]
     if target not in available_targets:
-        raise ValueError('invalid info target: {}'.format(target))
+        raise ValueError(f'invalid info target:\t{target}')
     logger.info('Information')
     cf = read_yml(path=config_yml)
     api = create_api(config=cf)
     account_id = cf['oanda']['account_id']
     insts = cf.get('instruments') or instruments or list()
     arg_insts = {'instruments': ','.join(insts)} if insts else {}
-    logger.debug('information target: {}'.format(target))
+    logger.debug(f'information target:\t{target}')
     if target == 'instruments':
         res = api.account.instruments(accountID=account_id, **arg_insts)
     elif target == 'account':
@@ -44,7 +44,7 @@ def print_info(config_yml, instruments=None, target='accounts',
     elif target == 'positions':
         res = api.position.list_open(accountID=account_id)
     elif not insts:
-        raise ValueError('{}: instruments required'.format(target))
+        raise ValueError(f'{target}:\tinstruments required')
     elif target == 'prices':
         res = api.pricing.get(accountID=account_id, **arg_insts)
     elif target == 'position':

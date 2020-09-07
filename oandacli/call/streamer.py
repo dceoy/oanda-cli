@@ -18,7 +18,7 @@ class StreamDriver(object, metaclass=ABCMeta):
     def __init__(self, api, account_id, target='pricing', instruments=None,
                  timeout_sec=0, snapshot=True, ignore_api_error=False):
         if target not in ['pricing', 'transaction']:
-            raise ValueError('invalid target: {}'.format(target))
+            raise ValueError(f'invalid target:\t{target}')
         elif target == 'pricing' and not instruments:
             raise ValueError('pricing: instruments required')
         else:
@@ -49,7 +49,7 @@ class StreamDriver(object, metaclass=ABCMeta):
                     td = datetime.now() - self.__latest_update_time
                     if td.total_seconds() > self.__timeout_sec:
                         self.__logger.warning(
-                            'Timeout: {} sec'.format(self.__timeout_sec)
+                            f'Timeout:\t{self.__timeout_sec} sec'
                         )
                         self.shutdown()
                         raise e
@@ -134,7 +134,7 @@ class StreamRecorder(StreamDriver):
             self.__logger.debug(msg)
             self._print_and_write_msg(msg_type=msg_type, msg=msg)
         else:
-            self.__logger.warning('Save skipped: {}'.format(msg))
+            self.__logger.warning(f'Save skipped:\t{msg}')
 
     def _print_and_write_msg(self, msg_type, msg):
         msg_json_str = str(msg.json())
@@ -152,7 +152,7 @@ class StreamRecorder(StreamDriver):
             c = self.__sqlite.cursor()
             table_name = msg_type.split('.')[0] + '_stream'
             c.execute(
-                'INSERT INTO {} VALUES (?,?,?)'.format(table_name),
+                f'INSERT INTO {table_name} VALUES (?,?,?)',
                 [msg.time, inst, msg_json_str]
             )
             self.__sqlite.commit()

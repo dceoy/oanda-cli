@@ -90,10 +90,10 @@ from ..util.logger import set_log_config
 
 
 def main():
-    args = docopt(__doc__, version='oandacli {}'.format(__version__))
+    args = docopt(__doc__, version=f'oandacli {__version__}')
     set_log_config(debug=args['--debug'], info=args['--info'])
     logger = logging.getLogger(__name__)
-    logger.debug('args:{0}{1}'.format(os.linesep, args))
+    logger.debug(f'args:{os.linesep}{args}')
     config_yml_path = fetch_config_yml_path(path=args['--file'])
     execute_command(args=args, config_yml_path=config_yml_path)
 

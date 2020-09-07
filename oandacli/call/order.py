@@ -22,12 +22,12 @@ def close_positions(config_yml, instruments=None):
                 pos = {
                     'instrument': p.instrument,
                     **{
-                        '{}Units'.format(k):
+                        f'{k}Units':
                         ('NONE' if int(getattr(p, k).units) == 0 else 'ALL')
                         for k in ['long', 'short']
                     }
                 }
-                logger.debug('pos: {}'.format(pos))
+                logger.debug(f'pos:\t{pos}')
                 res = api.position.close(accountID=account_id, **pos)
                 log_response(res, logger=logger)
                 if 100 <= res.status <= 399:

@@ -47,9 +47,7 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
                     lambda d: d[(d['date'] == t) & (d['instrument'] == i)]
                 ).drop(columns=['date', 'instrument'])
                 csv_path = str(
-                    csv_dir.joinpath(
-                        'candle.{0}.{1}.{2}.csv'.format(granularity, i, t)
-                    )
+                    csv_dir.joinpath(f'candle.{granularity}.{i}.{t}.csv')
                 )
                 if Path(csv_path).is_file():
                     df_csv_new = df_csv.append(
@@ -67,7 +65,7 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
                     ).set_index('time')
                 df_csv_new.to_csv(csv_path, mode='w', header=True, sep=',')
     if sqlite_path:
-        logger.debug('df_all.shape: {}'.format(df_all.shape))
+        logger.debug(f'df_all.shape:\t{df_all.shape}')
         sqlite_file = Path(sqlite_path).resolve()
         if sqlite_file.is_file():
             with sqlite3.connect(str(sqlite_file)) as con:
@@ -81,9 +79,7 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
                 ).pipe(
                     lambda d: d[d['in_db'].isna()].drop(columns=['in_db'])
                 )
-                logger.debug(
-                    'df_db_diff:{0}{1}'.format(os.linesep, df_db_diff)
-                )
+                logger.debug(f'df_db_diff:{os.linesep}{df_db_diff}')
                 pdsql.to_sql(df_db_diff, 'candle', con, if_exists='append')
         else:
             schema_sql_path = str(
@@ -95,7 +91,7 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
                 schema_sql = f.read()
             with sqlite3.connect(str(sqlite_file)) as con:
                 con.executescript(schema_sql)
-                logger.debug('df_all:{0}{1}'.format(os.linesep, df_all))
+                logger.debug(f'df_all:{os.linesep}{df_all}')
                 pdsql.to_sql(df_all, 'candle', con, if_exists='append')
     if not quiet:
         if print_json:
