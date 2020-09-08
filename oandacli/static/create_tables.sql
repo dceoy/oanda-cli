@@ -1,4 +1,5 @@
--- sql for streaming and tracking
+-- SQL for streaming and tracking
+
 
 CREATE TABLE pricing_stream (
   time VARCHAR(30),
@@ -9,6 +10,7 @@ CREATE TABLE pricing_stream (
 CREATE INDEX ix_pricing_stream_time ON pricing_stream (time);
 CREATE INDEX ix_pricing_stream_inst ON pricing_stream (instrument);
 
+
 CREATE TABLE transaction_stream (
   time VARCHAR(30),
   instrument VARCHAR(7),
@@ -17,6 +19,7 @@ CREATE TABLE transaction_stream (
 
 CREATE INDEX ix_transaction_stream_time ON transaction_stream (time);
 CREATE INDEX ix_transaction_stream_inst ON transaction_stream (instrument);
+
 
 CREATE TABLE candle (
   time VARCHAR(30),
@@ -35,3 +38,12 @@ CREATE TABLE candle (
 
 CREATE INDEX ix_candle_time ON candle (time);
 CREATE INDEX ix_candle_inst ON candle (instrument);
+
+
+CREATE TABLE transaction_history (
+  id INTEGER,
+  time VARCHAR(30),
+  json TEXT
+);
+
+CREATE INDEX ix_transaction_history_id ON transaction_history (id);

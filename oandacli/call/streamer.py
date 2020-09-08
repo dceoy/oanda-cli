@@ -110,15 +110,12 @@ class StreamRecorder(StreamDriver):
             if sqlite_file.is_file():
                 self.__sqlite = sqlite3.connect(str(sqlite_file))
             else:
-                schema_sql_path = str(
-                    Path(__file__).parent.parent.joinpath(
-                        'static/create_tables.sql'
-                    )
+                schema_sql = Path(__file__).parent.parent.joinpath(
+                    'static/create_tables.sql'
                 )
-                with open(schema_sql_path, 'r') as f:
-                    sql = f.read()
                 self.__sqlite = sqlite3.connect(str(sqlite_file))
-                self.__sqlite.executescript(sql)
+                with open(schema_sql, 'r') as f:
+                    self.__sqlite.executescript(f.read())
         else:
             self.__sqlite = None
         if csv_path:

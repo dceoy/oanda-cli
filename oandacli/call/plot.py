@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import json
 import logging
 import os
 import sqlite3
@@ -20,57 +21,51 @@ def read_and_plot_pl(data_path, graph_path):
         ]),
         'sqlite': ('.sqlite3', '.sqlite', '.db')
     }
-    col_dtypes = {
-        'id': int, 'time': str, 'accountBalance': float, 'instrument': str,
-        'pl': float, 'tradeOpened': str
-    }
     if data_path.endswith(exts['csv']):
         df_txn = pd.read_csv(
-            data_path, sep=',', usecols=col_dtypes.keys(), dtype=col_dtypes
+            data_path, sep=',', usecols=['json'], dtype={'json': str}
         )
     elif data_path.endswith(exts['tsv']):
         df_txn = pd.read_csv(
-            data_path, sep='\t', usecols=col_dtypes.keys(), dtype=col_dtypes
+            data_path, sep='\t', usecols=['json'], dtype={'json': str}
         )
     elif data_path.endswith(exts['sqlite']):
-        sql = (
-            'SELECT id, time, accountBalance, instrument, pl, tradeOpened'
-            ' FROM transaction_history'
-            ' WHERE accountBalance IS NOT NULL AND instrument IS NOT NULL;'
-        )
         with sqlite3.connect(data_path) as con:
-            df_txn = pdsql.read_sql(sql, con=con).astype(col_dtypes).assign(
-                tradeOpened=lambda d:
-                d['tradeOpened'].mask(d['tradeOpened'] == 'nan')
+            df_txn = pdsql.read_sql(
+                'SELECT json FROM transaction_history;', con=con
             )
     else:
         raise ValueError(f'unsupported file type:\t{data_path}')
-    plot_pl(df_txn=df_txn.set_index('id'), path=graph_path)
+    plot_pl(df_txn=df_txn, path=graph_path)
 
 
 def plot_pl(df_txn, path):
     logger = logging.getLogger(__name__)
-    df_pl = df_txn[[
-        'time', 'accountBalance', 'instrument', 'pl', 'tradeOpened'
-    ]].pipe(
+    df_pl = pd.DataFrame([
+        {
+            **{
+                k: o.get(k)
+                for k in ['time', 'instrument', 'accountBalance', 'pl']
+            },
+            'initialMarginRequired': (
+                o['tradeOpened'].get('initialMarginRequired')
+                if o.get('tradeOpened') else None
+            )
+        } for o in df_txn['json'].apply(json.loads)
+    ]).pipe(
         lambda d: d[d['accountBalance'].notna() & d['instrument'].notna()]
     ).astype(
-        dtype={'accountBalance': float, 'pl': float, 'tradeOpened': object}
+        dtype={
+            k: float for k in ['accountBalance', 'pl', 'initialMarginRequired']
+        }
     ).assign(
-        time=lambda d: pd.to_datetime(d['time']),
-        pl=lambda d: d['pl'].fillna(0)
+        time=lambda d: pd.to_datetime(d['time'])
     )
     logger.debug(f'df_pl:{os.linesep}{df_pl}')
     df_cumpl = df_pl.set_index(['instrument', 'time'])['pl'].unstack(
         level=0, fill_value=0
     ).cumsum().stack().to_frame('pl').reset_index()
     logger.debug(f'df_cumpl:{os.linesep}{df_cumpl}')
-    df_margin = df_pl.pipe(lambda d: d[d['tradeOpened'].notna()]).assign(
-        initialMarginRequired=lambda d: d['tradeOpened'].astype(str).apply(
-            lambda s: eval(s).get('initialMarginRequired')
-        ).astype(float)
-    )
-    logger.debug(f'df_margin:{os.linesep}{df_margin}')
 
     plt.rcParams['figure.figsize'] = (11.88, 8.40)  # A4 aspect: (297x210)
     sns.set(style='ticks', color_codes=True)
@@ -97,7 +92,7 @@ def plot_pl(df_txn, path):
         ylim=(pd.Series([-1, 1]) * df_cumpl['pl'].abs().max() * ylim_ratio)
     )
 
-    for i, d in df_margin.groupby('instrument'):
+    for i, d in df_pl.groupby('instrument'):
         axes[1].bar(
             x='time', height='initialMarginRequired', label=i, color=colors[i],
             data=d, alpha=alpha, width=0.02
@@ -105,7 +100,7 @@ def plot_pl(df_txn, path):
     axes[1].set(
         title='Initial Margins of Trades',
         ylabel='initialMarginRequired', xlim=time_range,
-        ylim=(0, df_margin['initialMarginRequired'].max() * ylim_ratio)
+        ylim=(0, df_pl['initialMarginRequired'].max() * ylim_ratio)
     )
 
     axes[2].fill_between(

@@ -80,19 +80,20 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
                     lambda d: d[d['in_db'].isna()].drop(columns=['in_db'])
                 )
                 logger.debug(f'df_db_diff:{os.linesep}{df_db_diff}')
-                pdsql.to_sql(df_db_diff, 'candle', con, if_exists='append')
-        else:
-            schema_sql_path = str(
-                Path(__file__).parent.parent.joinpath(
-                    'static/create_tables.sql'
+                pdsql.to_sql(
+                    df_db_diff, name='candle', con=con, if_exists='append'
                 )
+        else:
+            schema_sql = Path(__file__).parent.parent.joinpath(
+                'static/create_tables.sql'
             )
-            with open(schema_sql_path, 'r') as f:
-                schema_sql = f.read()
             with sqlite3.connect(str(sqlite_file)) as con:
-                con.executescript(schema_sql)
+                with open(schema_sql, 'r') as f:
+                    con.executescript(f.read())
                 logger.debug(f'df_all:{os.linesep}{df_all}')
-                pdsql.to_sql(df_all, 'candle', con, if_exists='append')
+                pdsql.to_sql(
+                    df_all, name='candle', con=con, if_exists='append'
+                )
     if not quiet:
         if print_json:
             print(json.dumps(candles, indent=2))
