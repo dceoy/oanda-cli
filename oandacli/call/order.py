@@ -16,9 +16,11 @@ def close_positions(config_yml, instruments=None):
     pos_res = api.position.list_open(accountID=account_id)
     log_response(pos_res, logger=logger)
     positions = pos_res.body['positions']
+    insts_to_close = list()
     if positions:
         for p in positions:
             if not instruments or p.instrument in instruments:
+                insts_to_close.append(p.instrument)
                 pos = {
                     'instrument': p.instrument,
                     **{
@@ -36,6 +38,7 @@ def close_positions(config_yml, instruments=None):
                     raise RuntimeError(
                         'unexpected response:' + os.linesep + pformat(res.body)
                     )
-        print('All the positions closed.')
+    if insts_to_close:
+        print('Positions closed:\t' + ', '.join(insts_to_close))
     else:
         print('No positions to close.')
