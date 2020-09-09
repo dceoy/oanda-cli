@@ -81,6 +81,8 @@ Usage:
                           [--to=<date>] [--csv=<path>] [--sqlite=<path>]
                           [--pl-graph=<path>] [--json] [--quiet]
     oanda-cli plotpl [--debug|--info] <data_path> <graph_path>
+    oanda-cli spread [--debug|--info] [--file=<yaml>] [--csv=<path>] [--quiet]
+                     [<instrument>...]
     oanda-cli close [--debug|--info] [--file=<yaml>] [<instrument>...]
 
 Options:
@@ -117,6 +119,7 @@ Commands:
     stream              Stream market prices or authorized account events
     transaction         Fetch the latest transactions
     plotpl              Visualize cumulative PL in a file
+    spread              Print the ratios of spread to price
     close               Close positions (if not <instrument>, close all)
 
 Arguments:

@@ -3,6 +3,7 @@
 import json
 import logging
 
+import pandas as pd
 import yaml
 
 from ..util.config import create_api, log_response, read_yml
@@ -21,7 +22,7 @@ def print_info(config_yml, instruments=None, target='accounts',
     cf = read_yml(path=config_yml)
     api = create_api(config=cf)
     account_id = cf['oanda']['account_id']
-    insts = cf.get('instruments') or instruments or list()
+    insts = instruments or cf.get('instruments') or list()
     arg_insts = {'instruments': ','.join(insts)} if insts else {}
     logger.debug(f'information target:\t{target}')
     if target == 'instruments':
@@ -52,3 +53,34 @@ def print_info(config_yml, instruments=None, target='accounts',
         json.dumps(data, indent=2) if print_json
         else yaml.dump(data, default_flow_style=False).strip()
     )
+
+
+def print_spread_ratios(config_yml, instruments=None, csv_path=None,
+                        quiet=False):
+    logger = logging.getLogger(__name__)
+    logger.info('Prices and Spread Ratios')
+    cf = read_yml(path=config_yml)
+    api = create_api(config=cf)
+    account_id = cf['oanda']['account_id']
+    insts = instruments or cf.get('instruments') or list()
+    assert insts, 'instruments required'
+    res = api.pricing.get(accountID=account_id, instruments=','.join(insts))
+    log_response(res, logger=logger)
+    df_spr = pd.DataFrame([
+        {k: o[k] for k in ['instrument', 'closeoutBid', 'closeoutAsk']}
+        for o in json.loads(res.raw_body)['prices']
+    ]).rename(
+        columns={'closeoutBid': 'bid', 'closeoutAsk': 'ask'}
+    ).astype(
+        dtype={'bid': float, 'ask': float}
+    ).assign(
+        mid=lambda d: d[['bid', 'ask']].mean(axis=1),
+        spread=lambda d: (d['ask'] - d['bid'])
+    ).assign(
+        ratio_of_spread_to_mid=lambda d: (d['spread'] / d['mid'])
+    ).set_index('instrument').sort_values('ratio_of_spread_to_mid')
+    if csv_path:
+        df_spr.to_csv(csv_path)
+    if not quiet:
+        with pd.option_context('display.max_rows', None):
+            print(df_spr)

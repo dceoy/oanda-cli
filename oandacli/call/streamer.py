@@ -180,10 +180,11 @@ def invoke_streamer(config_yml, target='pricing', instruments=None,
     logger.info('Streaming')
     cf = read_yml(path=config_yml)
     rd = cf.get('redis') or dict()
+    insts = instruments or cf.get('instruments') or list()
+    assert insts, 'instruments required'
     streamer = StreamRecorder(
         api=create_api(config=cf, stream=True),
-        account_id=cf['oanda']['account_id'], target=target,
-        instruments=(instruments or cf['instruments']),
+        account_id=cf['oanda']['account_id'], target=target, instruments=insts,
         timeout_sec=timeout_sec, snapshot=True,
         ignore_api_error=ignore_api_error, skip_heartbeats=skip_heartbeats,
         use_redis=use_redis, redis_host=(redis_host or rd.get('host')),

@@ -18,9 +18,11 @@ def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
     logger = logging.getLogger(__name__)
     logger.info('Rate tracking')
     cf = read_yml(path=config_yml)
+    insts = instruments or cf.get('instruments') or list()
+    assert insts, 'instruments required'
     api = create_api(config=cf)
     candles = dict()
-    for i in (instruments or cf['instruments']):
+    for i in insts:
         res = api.instrument.candles(
             instrument=i, price='BA', granularity=granularity, count=int(count)
         )
