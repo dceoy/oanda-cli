@@ -51,6 +51,9 @@ Getting started
 
     # Close all positions
     $ oanda-cli close
+
+    # Fetch transactions and visualize cumulative PL
+    $ oanda-cli transaction --from=2020-09-01 --pl-graph=./pl.pdf
     ```
 
 Usage
@@ -62,7 +65,7 @@ Command Line Interface for Oanda API
 
 Usage:
     oanda-cli -h|--help
-    oanda-cli -v|--version
+    oanda-cli --version
     oanda-cli init [--debug|--info] [--file=<yaml>]
     oanda-cli info [--debug|--info] [--file=<yaml>] [--json] <info_target>
                    [<instrument>...]
@@ -74,11 +77,15 @@ Usage:
                      [--use-redis] [--redis-host=<ip>] [--redis-port=<int>]
                      [--redis-db=<int>] [--redis-max-llen=<int>]
                      [--ignore-api-error] [--quiet] [<instrument>...]
+    oanda-cli transaction [--debug|--info] [--file=<yaml>] [--from=<date>]
+                          [--to=<date>] [--csv=<path>] [--sqlite=<path>]
+                          [--pl-graph=<path>] [--json] [--quiet]
+    oanda-cli plotpl [--debug|--info] <data_path> <graph_path>
     oanda-cli close [--debug|--info] [--file=<yaml>] [<instrument>...]
 
 Options:
     -h, --help          Print help and exit
-    -v, --version       Print version and exit
+    --version           Print version and exit
     --debug, --info     Execute a command with debug|info messages
     --file=<yaml>       Set a path to a YAML for configurations [$OANDA_YML]
     --quiet             Suppress messages
@@ -99,18 +106,23 @@ Options:
     --redis-max-llen=<int>
                         Limit Redis list length (override YAML configurations)
     --ignore-api-error  Ignore Oanda API connection errors
+    --from=<date>       Specify the starting time
+    --to=<date>         Specify the ending time
+    --pl-graph=<path>   Visualize PL in a graphics file such as PDF or PNG
 
 Commands:
     init                Create a YAML template for configuration
     info                Print information about <info_target>
     track               Fetch past rates
     stream              Stream market prices or authorized account events
+    transaction         Fetch the latest transactions
+    plotpl              Visualize cumulative PL in a file
     close               Close positions (if not <instrument>, close all)
 
 Arguments:
     <info_target>       { instruments, prices, account, accounts, orders,
-                          trades, positions, position, transactions,
-                          order_book, position_book }
+                          trades, positions, position, order_book,
+                          position_book }
     <instrument>        { AUD_CAD, AUD_CHF, AUD_HKD, AUD_JPY, AUD_NZD, AUD_SGD,
                           AUD_USD, CAD_CHF, CAD_HKD, CAD_JPY, CAD_SGD, CHF_HKD,
                           CHF_JPY, CHF_ZAR, EUR_AUD, EUR_CAD, EUR_CHF, EUR_CZK,
@@ -123,4 +135,6 @@ Arguments:
                           USD_CNH, USD_CZK, USD_DKK, USD_HKD, USD_HUF, USD_INR,
                           USD_JPY, USD_MXN, USD_NOK, USD_PLN, USD_SAR, USD_SEK,
                           USD_SGD, USD_THB, USD_TRY, USD_ZAR, ZAR_JPY }
+    <data_path>         Path to an input CSV or SQLite file
+    <graph_path>        Path to an output graphics file such as PDF or PNG
 ```
