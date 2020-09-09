@@ -86,10 +86,11 @@ from docopt import docopt
 
 from .. import __version__
 from ..call.candle import track_rate
-from ..call.info import print_info, track_transaction
+from ..call.info import print_info
 from ..call.order import close_positions
 from ..call.plot import read_and_plot_pl
 from ..call.streamer import invoke_streamer
+from ..call.transaction import track_transaction
 from ..util.config import fetch_config_yml_path, write_config_yml
 from ..util.logger import set_log_config
 
