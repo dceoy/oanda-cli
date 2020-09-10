@@ -62,13 +62,19 @@ def print_spread_ratios(config_yml, instruments=None, csv_path=None,
     cf = read_yml(path=config_yml)
     api = create_api(config=cf)
     account_id = cf['oanda']['account_id']
-    insts = instruments or cf.get('instruments') or list()
-    assert insts, 'instruments required'
-    res = api.pricing.get(accountID=account_id, instruments=','.join(insts))
-    log_response(res, logger=logger)
+    if instruments:
+        insts = instruments
+    elif cf.get('instruments'):
+        insts = cf['instruments']
+    else:
+        res0 = api.account.instruments(accountID=account_id)
+        log_response(res0, logger=logger)
+        insts = [o['name'] for o in json.loads(res0.raw_body)['instruments']]
+    res1 = api.pricing.get(accountID=account_id, instruments=','.join(insts))
+    log_response(res1, logger=logger)
     df_spr = pd.DataFrame([
         {k: o[k] for k in ['instrument', 'closeoutBid', 'closeoutAsk']}
-        for o in json.loads(res.raw_body)['prices']
+        for o in json.loads(res1.raw_body)['prices']
     ]).rename(
         columns={'closeoutBid': 'bid', 'closeoutAsk': 'ask'}
     ).astype(
