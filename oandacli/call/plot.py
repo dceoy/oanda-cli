@@ -93,9 +93,9 @@ def plot_pl(df_txn, path):
     )
 
     for i, d in df_pl.groupby('instrument'):
-        axes[1].bar(
-            x='time', height='initialMarginRequired', label=i, color=colors[i],
-            data=d, alpha=alpha, width=0.02
+        axes[1].scatter(
+            x='time', y='initialMarginRequired', label=i, color=colors[i],
+            data=d, alpha=alpha, marker='+'
         )
     axes[1].set(
         title='Initial Margins of Trades',
