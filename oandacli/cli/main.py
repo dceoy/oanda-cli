@@ -108,7 +108,7 @@ def main():
 
 
 def execute_command(args, config_yml_path):
-    if args['init']:
+    if args.get('init'):
         write_config_yml(
             dest_path=config_yml_path,
             template_path=str(
@@ -117,19 +117,19 @@ def execute_command(args, config_yml_path):
                 )
             )
         )
-    elif args['info']:
+    elif args.get('info'):
         print_info(
             config_yml=config_yml_path, instruments=args['<instrument>'],
             target=args['<info_target>'], print_json=args['--json']
         )
-    elif args['track']:
+    elif args.get('track'):
         track_rate(
             config_yml=config_yml_path, instruments=args['<instrument>'],
             granularity=args['--granularity'], count=args['--count'],
             csv_dir_path=args['--csv-dir'], sqlite_path=args['--sqlite'],
             print_json=args['--json'], quiet=args['--quiet']
         )
-    elif args['stream']:
+    elif args.get('stream'):
         invoke_streamer(
             config_yml=config_yml_path, target=args['--target'],
             instruments=args['<instrument>'], timeout_sec=args['--timeout'],
@@ -139,23 +139,23 @@ def execute_command(args, config_yml_path):
             redis_max_llen=args['--redis-max-llen'],
             ignore_api_error=args['--ignore-api-error'], quiet=args['--quiet']
         )
-    elif args['transaction']:
+    elif args.get('transaction'):
         track_transaction(
             config_yml=config_yml_path, from_time=args['--from'],
             to_time=args['--to'], csv_path=args['--csv'],
             sqlite_path=args['--sqlite'], pl_graph_path=args['--pl-graph'],
             print_json=args['--json'], quiet=args['--quiet']
         )
-    elif args['plotpl']:
+    elif args.get('plotpl'):
         read_and_plot_pl(
             data_path=args['<data_path>'], graph_path=args['<graph_path>']
         )
-    elif args['spread']:
+    elif args.get('spread'):
         print_spread_ratios(
             config_yml=config_yml_path, instruments=args['<instrument>'],
             csv_path=args['--csv'], quiet=args['--quiet']
         )
-    elif args['close']:
+    elif args.get('close'):
         close_positions(
             config_yml=config_yml_path, instruments=args['<instrument>']
         )
