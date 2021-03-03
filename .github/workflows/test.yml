@@ -1,0 +1,30 @@
+---
+name: Test
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  test_installation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Install oanda-cli
+        run: |
+          pip install -U \
+            autopep8 flake8 flake8-bugbear flake8-isort pep8-naming .
+      - name: Validate the codes using flake8
+        run: |
+          find . -name '*.py' | xargs flake8
+      - name: Test a command
+        run: |
+          oanda-cli --version
+          oanda-cli --help
+          oanda-cli init --debug
