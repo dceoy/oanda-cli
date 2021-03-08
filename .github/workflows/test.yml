@@ -3,10 +3,10 @@ name: Test
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 jobs:
   test_installation:
     runs-on: ubuntu-latest
@@ -23,7 +23,7 @@ jobs:
       - name: Validate the codes using flake8
         run: |
           find . -name '*.py' | xargs flake8
-      - name: Test a command
+      - name: Test commands
         run: |
           oanda-cli --version
           oanda-cli --help
