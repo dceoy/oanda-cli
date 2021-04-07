@@ -6,10 +6,10 @@ import logging
 import pandas as pd
 import yaml
 
-from ..util.config import create_api, log_response, read_yml
+from ..util.logger import log_response
 
 
-def print_info(config_yml, instruments=None, target='accounts',
+def print_info(api, account_id=None, instruments=None, target='accounts',
                print_json=False):
     logger = logging.getLogger(__name__)
     available_targets = [
@@ -19,11 +19,7 @@ def print_info(config_yml, instruments=None, target='accounts',
     if target not in available_targets:
         raise ValueError(f'invalid info target:\t{target}')
     logger.info('Information')
-    cf = read_yml(path=config_yml)
-    api = create_api(config=cf)
-    account_id = cf['oanda']['account_id']
-    insts = instruments or cf.get('instruments') or list()
-    arg_insts = {'instruments': ','.join(insts)} if insts else {}
+    arg_insts = {'instruments': ','.join(instruments)} if instruments else {}
     logger.debug(f'information target:\t{target}')
     if target == 'instruments':
         res = api.account.instruments(accountID=account_id, **arg_insts)
@@ -37,16 +33,16 @@ def print_info(config_yml, instruments=None, target='accounts',
         res = api.trade.list_open(accountID=account_id)
     elif target == 'positions':
         res = api.position.list_open(accountID=account_id)
-    elif not insts:
+    elif not instruments:
         raise ValueError(f'{target}:\tinstruments required')
     elif target == 'prices':
         res = api.pricing.get(accountID=account_id, **arg_insts)
     elif target == 'position':
-        res = api.position.get(accountID=account_id, instrument=insts[0])
+        res = api.position.get(accountID=account_id, instrument=instruments[0])
     elif target == 'order_book':
-        res = api.instrument.order_book(instrument=insts[0])
+        res = api.instrument.order_book(instrument=instruments[0])
     elif target == 'position_book':
-        res = api.instrument.position_book(instrument=insts[0])
+        res = api.instrument.position_book(instrument=instruments[0])
     log_response(res, logger=logger)
     data = json.loads(res.raw_body)
     print(
@@ -55,17 +51,13 @@ def print_info(config_yml, instruments=None, target='accounts',
     )
 
 
-def print_spread_ratios(config_yml, instruments=None, csv_path=None,
+def print_spread_ratios(api, account_id, instruments=None, csv_path=None,
                         quiet=False):
+    assert account_id, 'account ID required'
     logger = logging.getLogger(__name__)
     logger.info('Prices and Spread Ratios')
-    cf = read_yml(path=config_yml)
-    api = create_api(config=cf)
-    account_id = cf['oanda']['account_id']
     if instruments:
         insts = instruments
-    elif cf.get('instruments'):
-        insts = cf['instruments']
     else:
         res0 = api.account.instruments(accountID=account_id)
         log_response(res0, logger=logger)

@@ -10,19 +10,16 @@ from pathlib import Path
 import pandas as pd
 import pandas.io.sql as pdsql
 
-from ..util.config import create_api, log_response, read_yml
+from ..util.logger import log_response
 
 
-def track_rate(config_yml, instruments, granularity, count, csv_dir_path=None,
+def track_rate(api, instruments, granularity, count, csv_dir_path=None,
                sqlite_path=None, print_json=False, quiet=False):
+    assert instruments, 'instruments required'
     logger = logging.getLogger(__name__)
     logger.info('Rate tracking')
-    cf = read_yml(path=config_yml)
-    insts = instruments or cf.get('instruments') or list()
-    assert insts, 'instruments required'
-    api = create_api(config=cf)
     candles = dict()
-    for i in insts:
+    for i in instruments:
         res = api.instrument.candles(
             instrument=i, price='BA', granularity=granularity, count=int(count)
         )

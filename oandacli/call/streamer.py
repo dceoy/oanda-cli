@@ -11,7 +11,7 @@ import pandas as pd
 import redis
 from v20 import V20ConnectionError, V20Timeout
 
-from ..util.config import create_api, log_response, read_yml
+from ..util.logger import log_response
 
 
 class StreamDriver(object, metaclass=ABCMeta):
@@ -171,26 +171,25 @@ class StreamRecorder(StreamDriver):
             self.__sqlite.close()
 
 
-def invoke_streamer(config_yml, target='pricing', instruments=None,
+def invoke_streamer(api, account_id, instruments, target='pricing',
                     timeout_sec=0, csv_path=None, sqlite_path=None,
                     use_redis=False, redis_host='127.0.0.1', redis_port=6379,
                     redis_db=0, redis_max_llen=None, ignore_api_error=False,
                     quiet=False, skip_heartbeats=True):
+    assert account_id, 'account ID required'
+    assert instruments, 'instruments required'
     logger = logging.getLogger(__name__)
     logger.info('Streaming')
-    cf = read_yml(path=config_yml)
-    rd = cf.get('redis') or dict()
-    insts = instruments or cf.get('instruments') or list()
-    assert insts, 'instruments required'
+    if use_redis:
+        assert redis_host, 'redis_host required'
+        assert redis_port, 'redis_port required'
+        assert redis_db or redis_db == 0, 'redis_db required'
     streamer = StreamRecorder(
-        api=create_api(config=cf, stream=True),
-        account_id=cf['oanda']['account_id'], target=target, instruments=insts,
+        api=api, account_id=account_id, target=target, instruments=instruments,
         timeout_sec=timeout_sec, snapshot=True,
         ignore_api_error=ignore_api_error, skip_heartbeats=skip_heartbeats,
-        use_redis=use_redis, redis_host=(redis_host or rd.get('host')),
-        redis_port=(redis_port or rd.get('port')),
-        redis_db=(redis_db if redis_db is not None else rd.get('db')),
-        redis_max_llen=redis_max_llen, sqlite_path=sqlite_path,
-        csv_path=csv_path, quiet=quiet
+        use_redis=use_redis, redis_host=redis_host, redis_port=redis_port,
+        redis_db=redis_db, redis_max_llen=redis_max_llen,
+        sqlite_path=sqlite_path, csv_path=csv_path, quiet=quiet
     )
     streamer.invoke()

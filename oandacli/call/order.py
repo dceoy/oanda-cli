@@ -4,15 +4,13 @@ import logging
 import os
 from pprint import pformat
 
-from ..util.config import create_api, log_response, read_yml
+from ..util.logger import log_response
 
 
-def close_positions(config_yml, instruments=None):
+def close_positions(api, account_id, instruments=None):
+    assert account_id, 'account ID required'
     logger = logging.getLogger(__name__)
     logger.info('Position closing')
-    cf = read_yml(path=config_yml)
-    account_id = cf['oanda']['account_id']
-    api = create_api(config=cf)
     pos_res = api.position.list_open(accountID=account_id)
     log_response(pos_res, logger=logger)
     positions = pos_res.body['positions']

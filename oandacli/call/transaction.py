@@ -11,17 +11,18 @@ import pandas as pd
 import pandas.io.sql as pdsql
 import yaml
 
-from ..util.config import create_api, log_response, read_yml
+from ..util.logger import log_response
 from .plot import plot_pl
 
 
-def track_transaction(config_yml, from_time=None, to_time=None, csv_path=None,
-                      sqlite_path=None, pl_graph_path=None, print_json=False,
-                      quiet=False):
+def track_transaction(api, account_id, from_time=None, to_time=None,
+                      csv_path=None, sqlite_path=None, pl_graph_path=None,
+                      print_json=False, quiet=False):
+    assert account_id, 'account ID required'
     logger = logging.getLogger(__name__)
     logger.info('Transaction tracking')
     transactions = _fetch_transactions(
-        config_yml=config_yml, from_time=from_time, to_time=to_time
+        api=api, account_id=account_id, from_time=from_time, to_time=to_time
     )
     if transactions:
         df_txn = pd.DataFrame([
@@ -71,11 +72,8 @@ def track_transaction(config_yml, from_time=None, to_time=None, csv_path=None,
         )
 
 
-def _fetch_transactions(config_yml, from_time=None, to_time=None):
+def _fetch_transactions(api, account_id, from_time=None, to_time=None):
     logger = logging.getLogger(__name__)
-    cf = read_yml(path=config_yml)
-    api = create_api(config=cf)
-    account_id = cf['oanda']['account_id']
     res = api.transaction.list(
         accountID=account_id,
         **{

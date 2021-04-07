@@ -85,6 +85,7 @@ import logging
 import os
 from pathlib import Path
 
+import v20
 from docopt import docopt
 
 from .. import __version__
@@ -94,7 +95,7 @@ from ..call.order import close_positions
 from ..call.plot import read_and_plot_pl
 from ..call.streamer import invoke_streamer
 from ..call.transaction import track_transaction
-from ..util.config import fetch_config_yml_path, write_config_yml
+from ..util.config import fetch_config_yml_path, read_yml, write_config_yml
 from ..util.logger import set_log_config
 
 
@@ -117,45 +118,62 @@ def execute_command(args, config_yml_path):
                 )
             )
         )
-    elif args.get('info'):
-        print_info(
-            config_yml=config_yml_path, instruments=args['<instrument>'],
-            target=args['<info_target>'], print_json=args['--json']
+    else:
+        config = read_yml(path=config_yml_path)
+        api = v20.Context(
+            hostname='{0}-fx{1}.oanda.com'.format(
+                ('stream' if args.get('stream') else 'api'),
+                config['oanda']['environment']
+            ),
+            token=config['oanda']['token']
         )
-    elif args.get('track'):
-        track_rate(
-            config_yml=config_yml_path, instruments=args['<instrument>'],
-            granularity=args['--granularity'], count=args['--count'],
-            csv_dir_path=args['--csv-dir'], sqlite_path=args['--sqlite'],
-            print_json=args['--json'], quiet=args['--quiet']
+        account_id = config['oanda'].get('account_id')
+        instruments = (
+            args.get('<instrument>') or config.get('instruments') or list()
         )
-    elif args.get('stream'):
-        invoke_streamer(
-            config_yml=config_yml_path, target=args['--target'],
-            instruments=args['<instrument>'], timeout_sec=args['--timeout'],
-            csv_path=args['--csv'], sqlite_path=args['--sqlite'],
-            use_redis=args['--use-redis'], redis_host=args['--redis-host'],
-            redis_port=args['--redis-port'], redis_db=args['--redis-db'],
-            redis_max_llen=args['--redis-max-llen'],
-            ignore_api_error=args['--ignore-api-error'], quiet=args['--quiet']
-        )
-    elif args.get('transaction'):
-        track_transaction(
-            config_yml=config_yml_path, from_time=args['--from'],
-            to_time=args['--to'], csv_path=args['--csv'],
-            sqlite_path=args['--sqlite'], pl_graph_path=args['--pl-graph'],
-            print_json=args['--json'], quiet=args['--quiet']
-        )
-    elif args.get('plotpl'):
-        read_and_plot_pl(
-            data_path=args['<data_path>'], graph_path=args['<graph_path>']
-        )
-    elif args.get('spread'):
-        print_spread_ratios(
-            config_yml=config_yml_path, instruments=args['<instrument>'],
-            csv_path=args['--csv'], quiet=args['--quiet']
-        )
-    elif args.get('close'):
-        close_positions(
-            config_yml=config_yml_path, instruments=args['<instrument>']
-        )
+        if args.get('info'):
+            print_info(
+                api=api, account_id=account_id, instruments=instruments,
+                target=args['<info_target>'], print_json=args['--json']
+            )
+        elif args.get('spread'):
+            print_spread_ratios(
+                api=api, account_id=account_id, instruments=instruments,
+                csv_path=args['--csv'], quiet=args['--quiet']
+            )
+        elif args.get('track'):
+            track_rate(
+                api=api, instruments=instruments,
+                granularity=args['--granularity'], count=args['--count'],
+                csv_dir_path=args['--csv-dir'], sqlite_path=args['--sqlite'],
+                print_json=args['--json'], quiet=args['--quiet']
+            )
+        elif args.get('stream'):
+            rd = config.get('redis') or dict()
+            invoke_streamer(
+                api=api, account_id=account_id, instruments=instruments,
+                target=args['--target'], timeout_sec=args['--timeout'],
+                csv_path=args['--csv'], sqlite_path=args['--sqlite'],
+                use_redis=args['--use-redis'],
+                redis_host=(args['--redis-host'] or rd.get('host')),
+                redis_port=(args['--redis-port'] or rd.get('port')),
+                redis_db=(args['--redis-db'] or rd.get('db')),
+                redis_max_llen=args['--redis-max-llen'],
+                ignore_api_error=args['--ignore-api-error'],
+                quiet=args['--quiet']
+            )
+        elif args.get('transaction'):
+            track_transaction(
+                api=api, account_id=account_id, from_time=args['--from'],
+                to_time=args['--to'], csv_path=args['--csv'],
+                sqlite_path=args['--sqlite'], pl_graph_path=args['--pl-graph'],
+                print_json=args['--json'], quiet=args['--quiet']
+            )
+        elif args.get('plotpl'):
+            read_and_plot_pl(
+                data_path=args['<data_path>'], graph_path=args['<graph_path>']
+            )
+        elif args.get('close'):
+            close_positions(
+                api=api, account_id=account_id, instruments=instruments
+            )
