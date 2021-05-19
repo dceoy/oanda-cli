@@ -137,7 +137,7 @@ class StreamRecorder(StreamDriver):
         msg_json_str = str(msg.json())
         if not self.__quiet:
             print(msg_json_str, flush=True)
-        inst = msg.instrument or ''
+        inst = (msg.instrument if hasattr(msg, 'instrument') else '')
         if self.__redis_pool:
             data_key = inst or 'transactions'
             redis_c = redis.StrictRedis(connection_pool=self.__redis_pool)
