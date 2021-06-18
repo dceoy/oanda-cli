@@ -5,6 +5,7 @@ Command Line Interface for Oanda V20 REST API
 
 [![Test](https://github.com/dceoy/oanda-cli/actions/workflows/test.yml/badge.svg)](https://github.com/dceoy/oanda-cli/actions/workflows/test.yml)
 [![Upload Python Package](https://github.com/dceoy/oanda-cli/actions/workflows/python-publish.yml/badge.svg)](https://github.com/dceoy/oanda-cli/actions/workflows/python-publish.yml)
+[![CI to Docker Hub](https://github.com/dceoy/oanda-cli/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/dceoy/oanda-cli/actions/workflows/docker-publish.yml)
 
 Installation
 ------------
@@ -19,7 +20,7 @@ Docker image
 The image is available at [Docker Hub](https://hub.docker.com/r/dceoy/oanda-cli/).
 
 ```sh
-$ docker pull dceoy/oanda-cli
+$ docker image pull dceoy/oanda-cli
 ```
 
 Getting started
