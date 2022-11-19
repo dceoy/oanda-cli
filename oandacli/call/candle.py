@@ -43,7 +43,8 @@ def track_rate(api, instruments, granularity, count, csv_dir_path=None,
         for t in df_all_day['date'].unique():
             for i in df_all_day['instrument'].unique():
                 df_csv = df_all_day.pipe(
-                    lambda d: d[(d['date'] == t) & (d['instrument'] == i)]
+                    lambda d:
+                    d[(d['date'] == t) & (d['instrument'] == i)]  # noqa: B023
                 ).drop(columns=['date', 'instrument'])
                 csv_path = str(
                     csv_dir.joinpath(f'candle.{granularity}.{i}.{t}.csv')
